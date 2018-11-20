@@ -8,10 +8,6 @@ if rawget(_G, "_error_classes") == nil then
     _G._error_classes = {}
 end
 
-local function trim(str)
-    return str:match('^%s*(.*%S)') or ''
-end
-
 local error_class = {
     __type = 'error_class'
 }
@@ -52,7 +48,7 @@ function error_class.new(self, ...)
     local stack = nil
 
     if self.capture_stack then
-        stack = trim(debug.traceback("", 2))
+        stack = string.strip(debug.traceback("", 2))
         str = str .. '\n' .. stack
     end
 
@@ -177,7 +173,7 @@ local function conn_eval_wrapped(conn_call_original, conn, func_name, ...)
     end
 
     if err.stack ~= nil then
-        local stack = trim(debug.traceback("", 2))
+        local stack = string.strip(debug.traceback("", 2))
 
         local stack_suffix = string.format(
             'during remote call to %s:%s, function %q\n%s',
@@ -218,7 +214,7 @@ local function conn_call_wrapped(conn_call_original, conn, func_name, ...)
     end
 
     if err.stack ~= nil then
-        local stack = trim(debug.traceback("", 2))
+        local stack = string.strip(debug.traceback("", 2))
 
         local stack_suffix = string.format(
             'during remote call to %s:%s, function %q\n%s',
