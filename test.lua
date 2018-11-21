@@ -33,8 +33,8 @@ local function ret_error(str)
     end
 end
 
-local function ret_success(str)
-    return str
+local function ret_success(...)
+    return ...
 end
 
 local function _log(...)
@@ -100,7 +100,7 @@ _log(ret, err)
 test:is(ret, 'test_success_3', 'return str: ret')
 test:is(err, nil, 'return str: err')
 
-local ret, err = my_error:pcall(function() my_error:assert(ret_nilerr('test_err_4')) end)
+local ret, err = pcall(function() my_error:assert(ret_nilerr('test_err_4')) end)
 _log(ret, err)
 test:ok(not ret, 'assert(nil, error): status')
 test:like(err.file, '.+/test.lua', 'assert(nil, error): file')
@@ -109,7 +109,7 @@ test:like(err.err, 'test_err_4', 'assert(nil, error): message')
 test:is(err.str, tostring(err), 'assert(nil, error): tostring')
 
 local _l_eclass_assert = 1 + debug.getinfo(1).currentline
-local ret, err = my_error:pcall(function() my_error:assert(false) end)
+local ret, err = pcall(function() my_error:assert(false) end)
 _log(ret, err)
 test:ok(not ret, 'assert(false): status')
 test:like(err.file, '.+/test.lua', 'assert(false): file')
