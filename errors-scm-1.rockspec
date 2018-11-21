@@ -13,7 +13,7 @@ description = {
 
 dependencies = {
     'lua >= 5.1',
-    'checks >= 2.0',
+    'checks == 2.1.1-1',
 }
 
 build = {
