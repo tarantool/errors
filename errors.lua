@@ -110,6 +110,10 @@ function error_class:new(...)
     return e
 end
 
+local function pack(...)
+    return select('#', ...), {...}
+end
+
 --- Perform protected Lua call, gathering error as object
 -- @tparam function fn called function
 -- @param[opt] ... call arguments
@@ -128,11 +132,15 @@ function error_class:pcall(fn, ...)
         end
     end
 
-    local ret = {xpcall(fn, collect, ...)}
+    local n, ret = pack(xpcall(fn, collect, ...))
     if not ret[1] then
-        return nil, ret[2]
+        -- fn did raise an error
+        -- xpcall return false, error_object
+        return nil, unpack(ret, 2, n)
     else
-        return ret[2], ret[3]
+        -- fn did not raise
+        -- xpcall return true, ...
+        return unpack(ret, 2, n)
     end
 end
 
@@ -151,7 +159,7 @@ function error_class:assert(cond, ...)
         elseif type(...) == 'string' then
             error(self:new(2, ...))
         else
-            error(({...})[1])
+            error(..., nil)
         end
     end
 
