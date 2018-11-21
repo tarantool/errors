@@ -45,13 +45,21 @@ local function _log(...)
     log.info(table.concat(tbl, ', '))
 end
 
-test:plan(51)
+test:plan(56)
 
 box.schema.user.grant(
     'guest',
     'read,write,execute',
     'universe', nil, {if_not_exists = true}
 )
+
+local ret, err = ret_nilerr('Bad format %s')
+_log(ret, err)
+test:is(ret, nil, 'return nil, error(badfmt): status')
+test:like(err.file, '.+/test.lua', 'return nil, error(badfmt): file')
+test:is(err.line, _l_nilerr, 'return nil, error(badfmt): line')
+test:like(err.err, 'Bad format %%s', 'return nil, error(badfmt): message')
+test:is(err.str, tostring(err), 'return nil, error(badfmt): tostring')
 
 local ret, err = my_error:pcall(ret_assert, 'test_err_1')
 _log(ret, err)
@@ -84,7 +92,7 @@ test:is(ret, nil, 'return nil, error(): status')
 test:like(err.file, '.+/test.lua', 'return nil, error(): file')
 test:is(err.line, _l_nilerr, 'return nil, error(): line')
 test:is(err.err, nil, 'return nil, error(): message')
-test:like(err.str, '^My error: nil\n', 'return nil, error(): tostring')
+test:like(err.str, '^My error: \n', 'return nil, error(): tostring')
 
 local tbl = {foo='bar'}
 local ret, err = my_error:pcall(ret_nilerr, tbl)

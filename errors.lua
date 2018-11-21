@@ -51,7 +51,7 @@ error_class.__index = error_class
 
 --- Create error object.
 -- Error payload is formatted by `string.format`
--- @tparam[opt] number level within the meaning of Lua `error(message, level)`
+-- @tparam[opt] number level within the meaning of Lua `debug.getinfo(level)`
 -- @tparam string fmt used for `string.format(fmt, ...)`
 -- @param[opt] ... formatting arguments
 -- @treturn error_object
@@ -72,7 +72,12 @@ function error_class:new(...)
     if (select('#', ...) < shift) then
         err = nil
     elseif (type(select(shift, ...)) == 'string') then
-        err = string.format(select(shift, ...))
+        local ok, _err = pcall(string.format, select(shift, ...))
+        if ok then
+            err = _err
+        else
+            err = select(shift, ...)
+        end
     else
         err = select(shift, ...)
     end
@@ -86,7 +91,7 @@ function error_class:new(...)
         file = frame.short_src or frame.src or 'eval'
     end
 
-    local str = string.format("%s: %s", self.name, err)
+    local str = string.format("%s: %s", self.name, err or '')
     local stack = nil
 
     if self.capture_stack then
