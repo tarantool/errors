@@ -37,6 +37,14 @@ local function ret_success(str)
     return str
 end
 
+local function _log(...)
+    local tbl = {}
+    for i = 1, select('#', ...) do
+        tbl[i] = tostring(select(i, ...))
+    end
+    log.info(table.concat(tbl, ', '))
+end
+
 test:plan(43)
 
 box.schema.user.grant(
@@ -46,7 +54,7 @@ box.schema.user.grant(
 )
 
 local ret, err = my_error:pcall(ret_assert, 'test_err_1')
-log.info('%s', err)
+_log(ret, err)
 test:is(ret, nil, 'assert: status')
 test:like(err.file, '.+/test.lua', 'assert: file')
 test:is(err.line, _l_assert, 'assert: line')
@@ -54,7 +62,7 @@ test:like(err.err, 'test.lua:.+: test_err_1', 'assert: message')
 test:is(err.str, tostring(err), 'assert: tostring')
 
 local ret, err = my_error:pcall(ret_error, 'test_err_3')
-log.info('%s', err)
+_log(ret, err)
 test:is(ret, nil, 'error: status')
 test:like(err.file, '.+/test.lua', 'error: file')
 test:is(err.line, _l_nilerr, 'error: line')
@@ -62,7 +70,7 @@ test:like(err.err, 'test_err_3', 'error: message')
 test:is(err.str, tostring(err), 'error: tostring')
 
 local ret, err = my_error:pcall(ret_nilerr, 'test_err_%d', 2)
-log.info('%s', err)
+_log(ret, err)
 test:is(ret, nil, 'return nil, error(str): status')
 test:like(err.file, '.+/test.lua', 'return nil, error(str): file')
 test:is(err.line, _l_nilerr, 'return nil, error(str): line')
@@ -71,7 +79,7 @@ test:is(err.str, tostring(err), 'return nil, error(str): tostring')
 test:like(err.str, '^My error: test_err_2\n', 'return nil, error(str): tostring')
 
 local ret, err = my_error:pcall(ret_nilerr)
-log.info('%s', err)
+_log(ret, err)
 test:is(ret, nil, 'return nil, error(): status')
 test:like(err.file, '.+/test.lua', 'return nil, error(): file')
 test:is(err.line, _l_nilerr, 'return nil, error(): line')
@@ -79,8 +87,8 @@ test:is(err.err, nil, 'return nil, error(): message')
 test:like(err.str, '^My error: nil\n', 'return nil, error(): tostring')
 
 local tbl = {foo='bar'}
-log.info('%s', err)
 local ret, err = my_error:pcall(ret_nilerr, tbl)
+_log(ret, err)
 test:is(ret, nil, 'return nil, error(tbl): status')
 test:like(err.file, '.+/test.lua', 'return nil, error(tbl): file')
 test:is(err.line, _l_nilerr, 'return nil, error(tbl): line')
@@ -88,13 +96,13 @@ test:is(err.err, tbl, 'return nil, error(tbl): message')
 test:like(err.str, '^My error: table: 0x(.-)\n', 'return nil, error(tbl): tostring')
 
 local ret, err = my_error:pcall(ret_success, 'test_success_3')
-log.info('%s', err)
+_log(ret, err)
 test:is(ret, 'test_success_3', 'return str: ret')
 test:is(err, nil, 'return str: err')
 
 local ret, err = my_error:pcall(function() my_error:assert(ret_nilerr('test_err_4')) end)
-log.info('%s', err)
-test:is(ret, nil, 'assert(nil, error): status')
+_log(ret, err)
+test:ok(not ret, 'assert(nil, error): status')
 test:like(err.file, '.+/test.lua', 'assert(nil, error): file')
 test:is(err.line, _l_nilerr, 'assert(nil, error): line')
 test:like(err.err, 'test_err_4', 'assert(nil, error): message')
@@ -102,17 +110,17 @@ test:is(err.str, tostring(err), 'assert(nil, error): tostring')
 
 local _l_eclass_assert = 1 + debug.getinfo(1).currentline
 local ret, err = my_error:pcall(function() my_error:assert(false) end)
-log.info('%s', err)
-test:is(ret, nil, 'assert(false): status')
+_log(ret, err)
+test:ok(not ret, 'assert(false): status')
 test:like(err.file, '.+/test.lua', 'assert(false): file')
 test:is(err.line, _l_eclass_assert, 'assert(false): line')
 test:like(err.err, 'assertion failed!', 'assert(false): message')
 test:is(err.str, tostring(err), 'assert(false): tostring')
 
 local ret, err = my_error:assert(ret_success('test_success_5'))
-log.info('%s', err)
 test:is(ret, 'test_success_5', 'assert(str, nil): ret')
 test:is(err, nil, 'assert(str, nil): err')
+_log(ret, err)
 
 errors.monkeypatch_netbox_call()
 
@@ -123,7 +131,7 @@ end
 local conn = net.connect('localhost:3301')
 
 local ret, err = conn:call('netbox_return_error', {'foo'})
-log.info('%s', err)
+_log(ret, err)
 
 test:like(err.err,
     'test_netbox_error: foo',
