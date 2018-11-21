@@ -13,7 +13,7 @@ local error_class = {
 }
 error_class.__index = error_class
 
-function error_class.new(self, ...)
+function error_class:new(...)
     checks('error_class')
 
     local level, shift
@@ -68,11 +68,7 @@ function error_class.new(self, ...)
     return e
 end
 
-function error_class.tostring(err)
-    return err.str
-end
-
-function error_class.pcall(self, fn, ...)
+function error_class:pcall(fn, ...)
     checks('error_class', '?')
 
     local function collect(estr)
@@ -96,7 +92,7 @@ end
 --   eclass:assert(cond, fmt, ...)
 -- is an equivalent to
 --   assert(cond, eclass:new(fmt, ...))
-function error_class.assert(self, cond, ...)
+function error_class:assert(cond, ...)
     checks('error_class', '?')
 
     if not cond then
@@ -110,6 +106,10 @@ function error_class.assert(self, cond, ...)
     end
 
     return cond, ...
+end
+
+function error_class.tostring(err)
+    return err.str
 end
 
 local function new_class(class_name, options)
