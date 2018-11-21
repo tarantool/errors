@@ -45,7 +45,7 @@ local function _log(...)
     log.info(table.concat(tbl, ', '))
 end
 
-test:plan(43)
+test:plan(51)
 
 box.schema.user.grant(
     'guest',
@@ -100,6 +100,12 @@ _log(ret, err)
 test:is(ret, 'test_success_3', 'return str: ret')
 test:is(err, nil, 'return str: err')
 
+local ret1, ret2, ret3 = my_error:pcall(ret_success, 'test_success_3.1', 'test_success_3.2', 'test_success_3.3')
+_log(ret1, ret2, ret3)
+test:is(ret1, 'test_success_3.1', 'return str: ret1')
+test:is(ret2, 'test_success_3.2', 'return str: ret2')
+test:is(ret3, 'test_success_3.3', 'return str: ret3')
+
 local ret, err = pcall(function() my_error:assert(ret_nilerr('test_err_4')) end)
 _log(ret, err)
 test:ok(not ret, 'assert(nil, error): status')
@@ -117,10 +123,19 @@ test:is(err.line, _l_eclass_assert, 'assert(false): line')
 test:like(err.err, 'assertion failed!', 'assert(false): message')
 test:is(err.str, tostring(err), 'assert(false): tostring')
 
-local ret, err = my_error:assert(ret_success('test_success_5'))
-test:is(ret, 'test_success_5', 'assert(str, nil): ret')
-test:is(err, nil, 'assert(str, nil): err')
+local _l_eclass_assert = 1 + debug.getinfo(1).currentline
+local ret, err = pcall(function() my_error:assert(false, 'assertion %03d', 7) end)
 _log(ret, err)
+test:ok(not ret, 'assert(false, fmt): status')
+test:like(err.file, '.+/test.lua', 'assert(false, fmt): file')
+test:is(err.line, _l_eclass_assert, 'assert(false, fmt): line')
+test:like(err.err, 'assertion 007', 'assert(false, fmt): message')
+test:is(err.str, tostring(err), 'assert(false, fmt): tostring')
+
+local ret, err = my_error:assert(true, 'assertion fmt %q', 6)
+_log(ret, err)
+test:is(ret, true, 'assert(true, fmt): ret')
+test:is(err, 'assertion fmt %q', 'assert(true, fmt): err')
 
 errors.monkeypatch_netbox_call()
 
