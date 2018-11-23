@@ -82,6 +82,10 @@ function error_class:new(...)
         err = select(shift, ...)
     end
 
+    if err == nil then
+        err = ''
+    end
+
     local frame = debug.getinfo(level, "Sl")
     local line = 0
     local file = 'eval'
@@ -91,7 +95,7 @@ function error_class:new(...)
         file = frame.short_src or frame.src or 'eval'
     end
 
-    local str = string.format("%s: %s", self.name, err or '')
+    local str = string.format("%s: %s", self.name, err)
     local stack = nil
 
     if self.capture_stack then
@@ -129,7 +133,8 @@ function error_class:pcall(fn, ...)
     checks('error_class', '?')
 
     local function collect(estr)
-        if type(estr) == 'string'
+        if estr == nil
+        or type(estr) == 'string'
         or type(estr) == 'cdata' then
             return self:new(2, tostring(estr))
         else
