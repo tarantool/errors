@@ -6,10 +6,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+
+- Implement `net.box` wrappers
 - Ldoc-based API documentation
+- Significantly refactor unit tests
+
+### Removed
+
+- Monkey-patching `net.box`
+
 
 ## [1.0.0] - 2018-09-06
 ### Added
+
 - Basic functionality
 - Unit tests
 - Luarock-based packaging

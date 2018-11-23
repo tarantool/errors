@@ -258,6 +258,24 @@ local function restore_mt(err)
 end
 
 local e_netbox_eval = new_class('Net.box eval failed')
+--- Do protected net.box evaluation.
+-- Execute code on remote server using Tarantool built-in [`net.box` `conn:eval`](
+-- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-eval).
+-- Additionally postprocess returned values:
+--
+-- * Substitute all `box.NULL` with `nil`;
+-- * Repair metatables of error objects because they are not transfered over network;
+-- * Extend stacktrace if possible;
+-- @within errors
+-- @see netbox_call
+-- @function netbox_eval
+-- @param conn net.box connection object
+-- @tparam string code
+-- @param[opt] arguments passed to `net.box` `eval`
+-- @param[opt] options passed to `net.box` `eval`
+-- @return[1] Postprocessed `conn:eval()` result
+-- @treturn[2] nil
+-- @treturn[2] error_object Error description
 local function netbox_eval(conn, code, ...)
     checks('table', 'string')
 
@@ -291,6 +309,21 @@ local function netbox_eval(conn, code, ...)
 end
 
 local e_netbox_call = new_class('Net.box call failed')
+--- Perform protected net.box call.
+-- Similar to `netbox_eval`,
+-- execute code on remote server using Tarantool built-in [`net.box` `conn:call`](
+-- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-call).
+-- Additionally postprocess returned values in the manner of `netbox_eval`
+-- @within errors
+-- @see netbox_eval
+-- @function netbox_call
+-- @param conn net.box connection object
+-- @tparam string function_name
+-- @param[opt] arguments passed to `net.box` `call`
+-- @param[opt] options passed to `net.box` `call`
+-- @return[1] Postprocessed `conn:call()` result
+-- @treturn[2] nil
+-- @treturn[2] error_object Error description
 local function netbox_call(conn, func_name, ...)
     checks('table', 'string')
     local n, ret = pack(e_netbox_call:pcall(

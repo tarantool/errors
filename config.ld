@@ -2,5 +2,8 @@ project = 'errors'
 file = {
     'errors.lua',
 }
-readme = 'README.md'
+topics = {
+	'README.md',
+	'CHANGELOG.md'
+}
 format = 'markdown'
