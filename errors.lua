@@ -92,7 +92,7 @@ function error_class:new(...)
 
     if type(frame) == 'table' then
         line = frame.currentline or 0
-        file = frame.short_src or frame.src or 'eval'
+        file = frame.short_src or frame.source or 'eval'
     end
 
     local str = string.format("%s: %s", self.name, err)
@@ -236,121 +236,91 @@ local function is_error_object(err)
     )
 end
 
-local netbox_eval_error = new_class('Net.box eval failed')
-local function conn_eval_wrapped(conn_call_original, conn, func_name, ...)
-    local res, err = netbox_eval_error:pcall(
-        conn_call_original,
-        conn, func_name, ...
-    )
-
-    if not is_error_object(err) then
-        return res, err
-    end
-
+local function restore_mt(err)
     local err_class = _G._error_classes[err.class_name]
-
-    if err_class ~= nil then
-        setmetatable(err, err_class.__instance_mt)
+    local mt
+    if err_class then
+        mt = err_class.__instance_mt
+    else
+        mt = {
+            __type = err.class_name,
+            __tostring = error_class.tostring,
+            __index = {
+                tostring = error_class.tostring,
+            },
+        }
     end
-
-    if err.stack ~= nil then
-        local stack = string.strip(debug.traceback("", 2))
-
-        local stack_suffix = string.format(
-            'during remote call to %s:%s, function %q\n%s',
-            conn.host,
-            conn.port,
-            func_name,
-            stack
-        )
-
-        err.str = string.format(
-            "%s\n%s",
-            err.str, stack_suffix
-        )
-        err.stack = string.format(
-            "%s\n%s",
-            err.stack, stack_suffix
-        )
+    if getmetatable(err) ~= mt then
+        return setmetatable(err, mt)
+    else
+        return nil
     end
-
-    return res, err
 end
 
-local netbox_call_error = new_class('Net.box call failed')
-local function conn_call_wrapped(conn_call_original, conn, func_name, ...)
-    local res, err = netbox_call_error:pcall(
-        conn_call_original,
-        conn, func_name, ...
-    )
+local e_netbox_eval = new_class('Net.box eval failed')
+local function netbox_eval(conn, code, ...)
+    checks('table', 'string')
 
-    if not is_error_object(err) then
-        return res, err
+    local n, ret = pack(e_netbox_eval:pcall(
+        conn.eval, conn,
+        code, ...
+    ))
+
+    for i = 1, n do
+        local obj = ret[i]
+        if obj == nil then
+            ret[i] = nil
+        elseif is_error_object(obj) then
+            if restore_mt(obj) and obj.stack ~= nil then
+                local stack = string.strip(debug.traceback("", 2))
+
+                local stack_suffix = string.format(
+                    'during net.box eval on %s:%s\n%s',
+                    conn.host,
+                    conn.port,
+                    stack
+                )
+
+                obj.str = obj.str .. '\n' .. stack_suffix
+                obj.stack = obj.stack .. '\n' .. stack_suffix
+            end
+        end
     end
 
-    local err_class = _G._error_classes[err.class_name]
-
-    if err_class ~= nil then
-        setmetatable(err, err_class.__instance_mt)
-    end
-
-    if err.stack ~= nil then
-        local stack = string.strip(debug.traceback("", 2))
-
-        local stack_suffix = string.format(
-            'during remote call to %s:%s, function %q\n%s',
-            conn.host,
-            conn.port,
-            func_name,
-            stack
-        )
-
-        err.str = string.format(
-            "%s\n%s",
-            err.str, stack_suffix
-        )
-        err.stack = string.format(
-            "%s\n%s",
-            err.stack, stack_suffix
-        )
-    end
-
-    return res, err
+    return unpack(ret, 1, n)
 end
 
-local function netbox_connect_wrapped(netbox_connect_original, ...)
-    local conn, err = netbox_connect_original(...)
-    if not conn then
-        return nil, err
+local e_netbox_call = new_class('Net.box call failed')
+local function netbox_call(conn, func_name, ...)
+    checks('table', 'string')
+    local n, ret = pack(e_netbox_call:pcall(
+        conn.call, conn,
+        func_name, ...
+    ))
+
+    for i = 1, n do
+        local obj = ret[i]
+        if obj == nil then
+            ret[i] = nil
+        elseif is_error_object(obj) then
+            if restore_mt(obj) and obj.stack ~= nil then
+                local stack = string.strip(debug.traceback("", 2))
+
+                local stack_suffix = string.format(
+                    'during net.box call to %s:%s, function %q\n%s',
+                    conn.host,
+                    conn.port,
+                    func_name,
+                    stack
+                )
+
+                obj.str = obj.str .. '\n' .. stack_suffix
+                obj.stack = obj.stack .. '\n' .. stack_suffix
+            end
+        end
     end
 
-    local conn_call_original = conn.call
-    conn.call = function(conn, ...)
-        return conn_call_wrapped(conn_call_original, conn, ...)
-    end
-
-    local conn_eval_original = conn.eval
-    conn.eval = function(conn, ...)
-        return conn_eval_wrapped(conn_eval_original, conn, ...)
-    end
-
-    return conn
-end
--- This code block hook a net.box call and checks the second returned
--- object. If it looks like an error object, it reconstructs the
--- metatable and enriches stack trace with current instance's stack
-local function monkeypatch_netbox_call()
-    if rawget(_G, "_error_netbox_ishooked") then
-        return
-    end
-
-    rawset(_G, "_error_netbox_ishooked", true)
-
-    local netbox = require('net.box')
-    local netbox_connect_original = netbox.connect
-    netbox.connect = function(...)
-        return netbox_connect_wrapped(netbox_connect_original, ...)
-    end
+    return unpack(ret, 1, n)
 end
 
 local function list()
@@ -366,5 +336,6 @@ end
 return {
     list = list,
     new_class = new_class,
-    monkeypatch_netbox_call = monkeypatch_netbox_call,
+    netbox_call = netbox_call,
+    netbox_eval = netbox_eval,
 }
