@@ -17,9 +17,9 @@ dependencies = {
 }
 
 build = {
-    type = 'builtin',
+    type = 'make',
     modules = {
         ['errors'] = 'errors.lua',
-    }
+    },
 }
 
