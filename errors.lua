@@ -199,18 +199,20 @@ local function new_class(class_name, options)
         log_on_creation = '?boolean',
     })
 
-    if options.capture_stack == nil then
-        options.capture_stack = true
+    local capture_stack = options and options.capture_stack
+    if capture_stack == nil then
+        capture_stack = true
     end
 
-    if options.log_on_creation == nil then
-        options.log_on_creation = false
+    local log_on_creation = options and options.log_on_creation
+    if log_on_creation == nil then
+        log_on_creation = false
     end
 
     local self = {
         name = class_name,
-        capture_stack = options.capture_stack,
-        log_on_creation = options.log_on_creation,
+        capture_stack = capture_stack,
+        log_on_creation = log_on_creation,
         __instance_mt = {
             __type = class_name,
             __tostring = error_class.tostring,
