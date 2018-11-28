@@ -1,7 +1,9 @@
-.PHONY: all install doc
+.PHONY: all install
 
-all: doc
-install: ;
-
-doc:
+LDOC := $(shell which ldoc)
+all:
+ifdef LDOC
 	ldoc .
+endif
+
+install: ;
