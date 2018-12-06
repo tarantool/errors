@@ -53,12 +53,7 @@ local function check_error(test, got, expected)
         test:is(got.line, expected.line, 'line ' .. tostring(got.line))
     end
 
-    if type(expected.err) == 'string' then
-        test:like(got.err, expected.err, 'err')
-    else
-        test:is(got.err, expected.err, 'err')
-    end
-
+    test:is(got.err, expected.err, 'err')
     test:like(got.str, expected.str, 'str')
     test:is(got.str, tostring(got.str), 'tostring')
 end
@@ -73,7 +68,7 @@ test:test('return e:new()', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^$',
+        err = '',
         str = '^My error: \n' ..
             'stack traceback:\n'
     }
@@ -84,7 +79,7 @@ test:test('return e:new(fmt, str)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^Green Bronze AF$',
+        err = 'Green Bronze AF',
         str = '^My error: Green Bronze AF\n' ..
             'stack traceback:\n'
     }
@@ -95,7 +90,7 @@ test:test('return e:new(bad_format)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^Bad format %%s$',
+        err = 'Bad format %s',
         str = '^My error: Bad format %%s\n' ..
             'stack traceback:\n'
     }
@@ -121,7 +116,7 @@ test:test('e:pcall(error, nil)', check_error, err,
     {
         file = '[C]',
         line = -1,
-        err = '^nil$',
+        err = 'nil',
         str = '^My error: nil\n' ..
             'stack traceback:\n'
     }
@@ -133,7 +128,7 @@ test:test('e:pcall(fn() error(nil) end)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^nil$',
+        err = 'nil',
         str = '^My error: nil\n' ..
             'stack traceback:\n'
     }
@@ -146,7 +141,7 @@ test:test('e:pcall(fn() error(string) end)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^'..etxt..'$',
+        err = etxt,
         str = '^My error: '..etxt..'\n' ..
             'stack traceback:\n'
     }
@@ -158,7 +153,7 @@ test:test('e:pcall(fn() error(e:new(string)) end)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^Red Steel$',
+        err = 'Red Steel',
         str = '^My error: Red Steel\n' ..
             'stack traceback:\n'
     }
@@ -170,7 +165,7 @@ test:test('e:pcall(fn() return nil, e:new(string) end)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^Lime Silver$',
+        err = 'Lime Silver',
         str = '^My error: Lime Silver\n' ..
             'stack traceback:\n'
     }
@@ -197,7 +192,7 @@ test:test('e:assert()', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^assertion failed!$',
+        err = 'assertion failed!',
         str = '^My error: assertion failed!\n' ..
             'stack traceback:\n'
     }
@@ -209,7 +204,7 @@ test:test('e:assert(false)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^assertion failed!$',
+        err = 'assertion failed!',
         str = '^My error: assertion failed!\n' ..
             'stack traceback:\n'
     }
@@ -221,7 +216,7 @@ test:test('e:assert(false, fmt, str)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^White Titanium$',
+        err = 'White Titanium',
         str = '^My error: White Titanium\n' ..
             'stack traceback:\n'
     }
@@ -233,7 +228,7 @@ test:test('e:assert(false, bad_format)', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^Bad format %%d$',
+        err = 'Bad format %d',
         str = '^My error: Bad format %%d\n' ..
             'stack traceback:\n'
     }
@@ -246,7 +241,7 @@ test:test('e:assert((fn() return nil, e:new("") end)())', check_error, err,
     {
         file = current_file,
         line = _l,
-        err = '^Purple Zinc$',
+        err = 'Purple Zinc',
         str = '^My error: Purple Zinc\n' ..
             'stack traceback:\n'
     }
@@ -275,7 +270,7 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, '=')
 test:test('netbox_eval(invalid_syntax)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = '^eval:1: unexpected symbol near %\'=%\'$',
+        err = [[eval:1: unexpected symbol near '=']],
         str = '^Net.box eval failed: .+\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
@@ -287,7 +282,7 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, 'error("Olive Brass")')
 test:test('netbox_eval("error(string)")', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = '^eval:1: Olive Brass$',
+        err = 'eval:1: Olive Brass',
         str = '^Net.box eval failed: eval:1: Olive Brass\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
@@ -304,7 +299,7 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, [[
 test:test('netbox_eval("error(table)")', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = '^{%"metal%":%"mercury%"}$',
+        err = '{"metal":"mercury"}',
         str = '^Net.box eval failed: {%"metal%":%"mercury%"}\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
@@ -317,7 +312,7 @@ test:test('netbox_eval("return e:new()")', check_error, err,
     {
         file = 'eval',
         line = 1,
-        err = '^﻿Aqua Steel$',
+        err = '﻿Aqua Steel',
         str = '^My error: ﻿Aqua Steel\n' ..
             'stack traceback:\n' ..
                 '\teval:1: in main chunk\n' ..
@@ -333,7 +328,7 @@ test:test('netbox_eval("return nil, e:new()")', check_error, err,
     {
         file = 'eval',
         line = 1,
-        err = '^White Zinc$',
+        err = 'White Zinc',
         str = '^My error: White Zinc\n' ..
             'stack traceback:\n' ..
                 '\teval:1: in main chunk\n' ..
@@ -352,7 +347,7 @@ test:test('netbox_eval("return remote_fn()")', check_error, err,
     {
         file = current_file,
         line = _l1,
-        err = '^Fuschia Platinum$',
+        err = 'Fuschia Platinum',
         str = '^My error: Fuschia Platinum\n' ..
             'stack traceback:\n' ..
                 string.format('\t%s:%d: ', current_file, _l1) ..
@@ -376,7 +371,7 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, 'return true')
 test:test('netbox_eval(closed_connection)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = '^Connection closed$',
+        err = 'Connection closed',
         str = '^Net.box eval failed: Connection closed\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
@@ -389,7 +384,7 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, 'return true')
 test:test('netbox_eval(closed_connection)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = '^$',
+        err = '',
         str = '^Net.box eval failed: \n' ..
             'stack traceback:\n' ..
             '.+\n' ..
@@ -407,7 +402,7 @@ local _l, _, err = get_line(), errors.netbox_call(conn, 'fn_undefined')
 test:test('netbox_call(fn_undefined)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = '^Procedure %\'fn_undefined%\' is not defined$',
+        err = [[Procedure 'fn_undefined' is not defined]],
         str = '^Net.box call failed: .+\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
@@ -422,7 +417,7 @@ test:test('netbox_call(return nil, e:new(string))', check_error, err,
     {
         file = current_file,
         line = _l1,
-        err = '^Yellow Iron$',
+        err = 'Yellow Iron',
         str = '^My error: Yellow Iron\n' ..
             'stack traceback:\n' ..
                 string.format('\t%s:%d: ', current_file, _l1) ..
