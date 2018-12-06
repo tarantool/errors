@@ -49,6 +49,17 @@ local error_class = {
 }
 error_class.__index = error_class
 
+
+local function is_error_object(err)
+    return (type(err) == 'table'
+        and err.err ~= nil
+        and err.str ~= nil
+        and err.line ~= nil
+        and err.file ~= nil
+        and err.class_name ~= nil
+    )
+end
+
 --- Create error object.
 -- Error payload is formatted by `string.format`
 -- @tparam[opt] number level within the meaning of Lua `debug.getinfo(level)`
@@ -78,6 +89,8 @@ function error_class:new(...)
         else
             err = select(shift, ...)
         end
+    elseif is_error_object(select(shift, ...)) then
+        return select(shift, ...)
     else
         err = select(shift, ...)
     end
@@ -225,17 +238,6 @@ local function new_class(class_name, options)
 
     _G._error_classes[class_name] = self
     return self
-end
-
-
-local function is_error_object(err)
-    return (type(err) == 'table'
-        and err.err ~= nil
-        and err.str ~= nil
-        and err.line ~= nil
-        and err.file ~= nil
-        and err.class_name ~= nil
-    )
 end
 
 local function restore_mt(err)

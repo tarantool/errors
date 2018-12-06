@@ -58,7 +58,7 @@ local function check_error(test, got, expected)
     test:is(got.str, tostring(got.str), 'tostring')
 end
 
-test:plan(28)
+test:plan(29)
 
 --- e:new() -------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -104,6 +104,18 @@ test:test('return e:new(table)', check_error, err,
         line = _l,
         err = tbl,
         str = '^My error: ' .. tostring(tbl) .. '\n' ..
+            'stack traceback:\n'
+    }
+)
+
+local _l1, err1 = get_line(), my_error:new('Inner error')
+local _l2, err2 = get_line(), my_error:new(err1)
+test:test('return e:new(e:new())', check_error, err2,
+    {
+        file = current_file,
+        line = _l1,
+        err = 'Inner error',
+        str = '^My error: Inner error\n' ..
             'stack traceback:\n'
     }
 )
