@@ -18,8 +18,12 @@ dependencies = {
 
 build = {
     type = 'make',
-    modules = {
-        ['errors'] = 'errors.lua',
+    install = {
+        lua = {
+            ['errors'] = 'errors.lua',
+        },
     },
+    install_pass = false,
+    copy_directories = {'doc'},
 }
 
