@@ -275,7 +275,7 @@ end)
 --- errors.netbox_eval() ------------------------------------------------------
 -------------------------------------------------------------------------------
 
-local conn = netbox.connect('localhost:3301')
+local conn = netbox.connect('127.0.0.1:3301')
 conn:wait_connected()
 
 local _l, _, err = get_line(), errors.netbox_eval(conn, '=')
@@ -329,7 +329,7 @@ test:test('netbox_eval("return e:new()")', check_error, err,
             'stack traceback:\n' ..
                 '\teval:1: in main chunk\n' ..
             '.+\n' ..
-            'during net.box eval on localhost:3301\n' ..
+            'during net.box eval on 127.0.0.1:3301\n' ..
             'stack traceback:\n'..
                 string.format('\t%s:%d: ', current_file, _l)
     }
@@ -345,7 +345,7 @@ test:test('netbox_eval("return nil, e:new()")', check_error, err,
             'stack traceback:\n' ..
                 '\teval:1: in main chunk\n' ..
             '.+\n' ..
-            'during net.box eval on localhost:3301\n' ..
+            'during net.box eval on 127.0.0.1:3301\n' ..
             'stack traceback:\n'..
                 -- string.format('\t%s:%d: in main chunk$', current_file, _l)
                 string.format('\t%s:%d: ', current_file, _l)
@@ -364,7 +364,7 @@ test:test('netbox_eval("return remote_fn()")', check_error, err,
             'stack traceback:\n' ..
                 string.format('\t%s:%d: ', current_file, _l1) ..
             '.+\n' ..
-            'during net.box eval on localhost:3301\n' ..
+            'during net.box eval on 127.0.0.1:3301\n' ..
             'stack traceback:\n'..
                 string.format('\t%s:%d: ', current_file, _l2)
     }
@@ -391,13 +391,13 @@ test:test('netbox_eval(closed_connection)', check_error, err,
     }
 )
 
-local conn = netbox.connect('localhost:9')
+local conn = netbox.connect('127.0.0.1:9')
 local _l, _, err = get_line(), errors.netbox_eval(conn, 'return true')
-test:test('netbox_eval(closed_connection)', check_error, err,
+test:test('netbox_eval(connection_refused)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = '',
-        str = '^Net.box eval failed: \n' ..
+        err = 'Connection refused',
+        str = '^Net.box eval failed: Connection refused\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -407,7 +407,7 @@ test:test('netbox_eval(closed_connection)', check_error, err,
 --- errors.netbox_call() ------------------------------------------------------
 -------------------------------------------------------------------------------
 
-local conn = netbox.connect('localhost:3301')
+local conn = netbox.connect('127.0.0.1:3301')
 conn:wait_connected()
 
 local _l, _, err = get_line(), errors.netbox_call(conn, 'fn_undefined')
@@ -434,7 +434,7 @@ test:test('netbox_call(return nil, e:new(string))', check_error, err,
             'stack traceback:\n' ..
                 string.format('\t%s:%d: ', current_file, _l1) ..
             '.+\n' ..
-            'during net.box call to localhost:3301, function "remote_fn"\n' ..
+            'during net.box call to 127.0.0.1:3301, function "remote_fn"\n' ..
             'stack traceback:\n'..
                 string.format('\t%s:%d: ', current_file, _l2)
     }
