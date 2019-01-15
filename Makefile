@@ -1,7 +1,8 @@
-.PHONY: all
+version := scm-1
 
-LDOC := $(shell which ldoc)
+.PHONY: all doc
 all:
-ifdef LDOC
-	ldoc .
-endif
+	mkdir -p doc
+
+doc:
+	ldoc -t "errors-${version}" -p "errors (${version})" --all .

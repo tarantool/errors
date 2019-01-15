@@ -1,4 +1,3 @@
-project = 'errors'
 file = {
     'errors.lua',
 }
