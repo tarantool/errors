@@ -1,9 +1,9 @@
 #!/usr/bin/env tarantool
 
-local log = require('log')
 local fio = require('fio')
 local tap = require('tap')
 local json = require('json')
+local checks = require('checks')
 local errors = require('errors')
 local netbox = require('net.box')
 local tempdir = fio.tempdir()
@@ -18,7 +18,8 @@ box.schema.user.grant(
     'read,write,execute',
     'universe', nil, {if_not_exists = true}
 )
-my_error = errors.new_class('My error')
+local my_error = errors.new_class('My error')
+_G.my_error = my_error
 
 local test = tap.test('errors')
 local current_file = debug.getinfo(1, 'S').short_src
@@ -440,15 +441,22 @@ test:test('netbox_call(return nil, e:new(string))', check_error, err,
     }
 )
 
-local remote_fn = function(...) return ... end
+local remote_fn = function(a1, a2, a3, a4)
+    checks('string', 'cdata', 'boolean', 'nil')
+    -- during netbox call args are converted to
+    -- "1", box.NULL, false, nil
+    return a1, a2, a3, a4
+end
 _G.remote_fn = remote_fn
-local ret = {errors.netbox_call(conn, 'remote_fn', {"1", nil, false})}
+local ret = {errors.netbox_call(conn, 'remote_fn', {"1", nil, false, nil})}
 test:test('netbox_call(return "1", nil, false)', function(test)
-    test:plan(3)
+    test:plan(4)
     test:is(ret[1], '1',   '[1] == "1"')
     test:is(type(ret[2]), 'nil',
                            '[2] == nil')
     test:is(ret[3], false, '[3] == false')
+    test:is(type(ret[4]), 'nil',
+                           '[4] == nil')
 end)
 
 os.exit(test:check() and 0 or 1)
