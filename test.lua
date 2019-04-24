@@ -59,7 +59,7 @@ local function check_error(test, got, expected)
     test:is(got.str, tostring(got.str), 'tostring')
 end
 
-test:plan(29)
+test:plan(35)
 
 --- e:new() -------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -191,7 +191,8 @@ test:test('e:pcall(fn() return 1, false, {}, nil, "5", true end)', function(test
     test:is(ret[1], 1,     '[1] == 1')
     test:is(ret[2], false, '[2] == false')
     test:is(ret[3], tbl,   '[3] == {}')
-    test:is(ret[4], nil,   '[4] == nil')
+    test:is(type(ret[4]), 'nil',
+                           '[4] == nil')
     test:is(ret[5], '5',   '[5] == "5"')
     test:is(ret[6], true,  '[6] == true')
 end)
@@ -266,7 +267,8 @@ test:test('e:assert(1, true, nil, "4", {}, false', function(test)
     test:plan(6)
     test:is(ret[1], 1,     '[1] == 1')
     test:is(ret[2], true,  '[2] == true')
-    test:is(ret[3], nil,   '[3] == nil')
+    test:is(type(ret[3]), 'nil',
+                           '[3] == nil')
     test:is(ret[4], '4',   '[4] == "4"')
     test:is(ret[5], tbl,   '[5] == {}')
     test:is(ret[6], false, '[6] == false')
@@ -441,6 +443,7 @@ test:test('netbox_call(return nil, e:new(string))', check_error, err,
     }
 )
 
+local fn_args = {"1", nil, false, nil}
 local remote_fn = function(a1, a2, a3, a4)
     checks('string', 'cdata', 'boolean', 'nil')
     -- during netbox call args are converted to
@@ -448,8 +451,109 @@ local remote_fn = function(a1, a2, a3, a4)
     return a1, a2, a3, a4
 end
 _G.remote_fn = remote_fn
-local ret = {errors.netbox_call(conn, 'remote_fn', {"1", nil, false, nil})}
-test:test('netbox_call(return "1", nil, false)', function(test)
+local ret = {errors.netbox_call(conn, 'remote_fn', fn_args)}
+test:test('netbox_call(return "1", nil, false, nil)', function(test)
+    test:plan(4)
+    test:is(ret[1], '1',   '[1] == "1"')
+    test:is(type(ret[2]), 'nil',
+                           '[2] == nil')
+    test:is(ret[3], false, '[3] == false')
+    test:is(type(ret[4]), 'nil',
+                           '[4] == nil')
+end)
+
+--- errors.wrap() -------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+local tbl = {}
+local _l, err = get_line(), errors.wrap(my_error:new())
+test:test('wrap e:new()', check_error, err,
+    {
+        file = current_file,
+        line = _l,
+        err = '',
+        str = '^My error: \n' ..
+            'stack traceback:\n'
+    }
+)
+local ret = {errors.wrap(1, true, nil, '4', err, box.NULL, tbl, false)}
+test:test('wrap fn() return 1, true, nil, "4", e:new(), box.NULL, {}, false end', function(test)
+    test:plan(8)
+    test:is(ret[1], 1,     '[1] == 1')
+    test:is(ret[2], true,  '[2] == true')
+    test:is(type(ret[3]), 'nil',
+                           '[3] == nil')
+    test:is(ret[4], '4',   '[4] == "4"')
+    test:is(ret[5], err,   '[5] == e:new()')
+    test:is(type(ret[6]), 'nil',
+                           '[6] == e:new()')
+    test:is(ret[7], tbl,   '[7] == {}')
+    test:is(ret[8], false, '[8] == false')
+end)
+
+local _l, _, err = get_line(), errors.wrap(conn:eval('return nil, my_error:new("﻿Aqua ﻿Aluminium")'))
+test:test('wrap conn:eval("return nil, e:new()")', check_error, err,
+    {
+        file = 'eval',
+        line = 1,
+        err = '﻿Aqua ﻿Aluminium',
+        str = '^My error: ﻿Aqua ﻿Aluminium\n' ..
+            'stack traceback:\n' ..
+                '\teval:1: in main chunk\n' ..
+            '.+\n' ..
+            'during wrapped call\n' ..
+            'stack traceback:\n'..
+                -- string.format('\t%s:%d: in main chunk$', current_file, _l)
+                string.format('\t%s:%d: ', current_file, _l)
+    }
+)
+
+local _l1, remote_fn = get_line(), function() return nil, my_error:new('Fuschia Platinum') end
+_G.remote_fn = remote_fn
+local _l2, _, err = get_line(), errors.wrap(conn:eval('return remote_fn()'))
+test:test('wrap conn:eval("return remote_fn()")', check_error, err,
+    {
+        file = current_file,
+        line = _l1,
+        err = 'Fuschia Platinum',
+        str = '^My error: Fuschia Platinum\n' ..
+            'stack traceback:\n' ..
+                string.format('\t%s:%d: ', current_file, _l1) ..
+            '.+\n' ..
+            'during wrapped call\n' ..
+            'stack traceback:\n'..
+                string.format('\t%s:%d: ', current_file, _l2)
+    }
+)
+
+local _l1, remote_fn = get_line(), function() return nil, my_error:new('Yellow Iron') end
+_G.remote_fn = remote_fn
+local _l2, _, err = get_line(), errors.wrap(conn:call('remote_fn'))
+test:test('warp conn:call(return nil, e:new(string))', check_error, err,
+    {
+        file = current_file,
+        line = _l1,
+        err = 'Yellow Iron',
+        str = '^My error: Yellow Iron\n' ..
+            'stack traceback:\n' ..
+                string.format('\t%s:%d: ', current_file, _l1) ..
+            '.+\n' ..
+            'during wrapped call\n' ..
+            'stack traceback:\n'..
+                string.format('\t%s:%d: ', current_file, _l2)
+    }
+)
+
+local fn_args = {"1", nil, false, nil}
+local remote_fn = function(a1, a2, a3, a4)
+    checks('string', 'cdata', 'boolean', 'nil')
+    -- during netbox call args are converted to
+    -- "1", box.NULL, false, nil
+    return a1, a2, a3, a4
+end
+_G.remote_fn = remote_fn
+local ret = {errors.wrap(conn:call('remote_fn', fn_args))}
+test:test('wrap conn:call(return "1", nil, false, nil)', function(test)
     test:plan(4)
     test:is(ret[1], '1',   '[1] == "1"')
     test:is(type(ret[2]), 'nil',

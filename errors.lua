@@ -261,15 +261,38 @@ local function restore_mt(err)
     end
 end
 
+local function wrap_with_suffix(suffix_format, ...)
+    checks('string|table')
+    local n, ret = pack(...)
+    for i = 1, n do
+        local obj = ret[i]
+        if obj == box.NULL then
+            ret[i] = nil
+        elseif is_error_object(obj) then
+            if restore_mt(obj) and obj.stack ~= nil then
+                local stack_suffix
+                local stack = string.strip(debug.traceback("", 2))
+
+                if type(suffix_format) == 'string' then
+                    stack_suffix = suffix_format
+                else
+                    stack_suffix = string.format(unpack(suffix_format))
+                end
+
+                obj.str = obj.str .. '\n' .. stack_suffix .. '\n' .. stack
+                obj.stack = obj.stack .. '\n' .. stack_suffix .. '\n' .. stack
+            end
+        end
+    end
+
+    return unpack(ret, 1, n)
+end
+
 local e_netbox_eval = new_class('Net.box eval failed')
 --- Do protected net.box evaluation.
 -- Execute code on remote server using Tarantool built-in [`net.box` `conn:eval`](
 -- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-eval).
--- Additionally postprocess returned values:
---
--- * Substitute all `box.NULL` with `nil`;
--- * Repair metatables of error objects because they are not transfered over network;
--- * Extend stacktrace if possible;
+-- Additionally postprocess returned values with `wrap`.
 -- @within errors
 -- @see netbox_call
 -- @function netbox_eval
@@ -283,33 +306,10 @@ local e_netbox_eval = new_class('Net.box eval failed')
 local function netbox_eval(conn, code, ...)
     checks('table', 'string')
 
-    local n, ret = pack(e_netbox_eval:pcall(
-        conn.eval, conn,
-        code, ...
-    ))
-
-    for i = 1, n do
-        local obj = ret[i]
-        if obj == nil then
-            ret[i] = nil
-        elseif is_error_object(obj) then
-            if restore_mt(obj) and obj.stack ~= nil then
-                local stack = string.strip(debug.traceback("", 2))
-
-                local stack_suffix = string.format(
-                    'during net.box eval on %s:%s\n%s',
-                    conn.host,
-                    conn.port,
-                    stack
-                )
-
-                obj.str = obj.str .. '\n' .. stack_suffix
-                obj.stack = obj.stack .. '\n' .. stack_suffix
-            end
-        end
-    end
-
-    return unpack(ret, 1, n)
+    return wrap_with_suffix(
+        {'during net.box eval on %s:%s', conn.host, conn.port},
+        e_netbox_eval:pcall(conn.eval, conn, code, ...)
+    )
 end
 
 local e_netbox_call = new_class('Net.box call failed')
@@ -317,7 +317,7 @@ local e_netbox_call = new_class('Net.box call failed')
 -- Similar to `netbox_eval`,
 -- execute code on remote server using Tarantool built-in [`net.box` `conn:call`](
 -- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-call).
--- Additionally postprocess returned values in the manner of `netbox_eval`
+-- Additionally postprocess returned values with `wrap`.
 -- @within errors
 -- @see netbox_eval
 -- @function netbox_call
@@ -330,34 +330,10 @@ local e_netbox_call = new_class('Net.box call failed')
 -- @treturn[2] error_object Error description
 local function netbox_call(conn, func_name, ...)
     checks('table', 'string')
-    local n, ret = pack(e_netbox_call:pcall(
-        conn.call, conn,
-        func_name, ...
-    ))
-
-    for i = 1, n do
-        local obj = ret[i]
-        if obj == nil then
-            ret[i] = nil
-        elseif is_error_object(obj) then
-            if restore_mt(obj) and obj.stack ~= nil then
-                local stack = string.strip(debug.traceback("", 2))
-
-                local stack_suffix = string.format(
-                    'during net.box call to %s:%s, function %q\n%s',
-                    conn.host,
-                    conn.port,
-                    func_name,
-                    stack
-                )
-
-                obj.str = obj.str .. '\n' .. stack_suffix
-                obj.stack = obj.stack .. '\n' .. stack_suffix
-            end
-        end
-    end
-
-    return unpack(ret, 1, n)
+    return wrap_with_suffix(
+        {'during net.box call to %s:%s, function %q', conn.host, conn.port, func_name},
+        e_netbox_call:pcall(conn.call, conn, func_name, ...)
+    )
 end
 
 local function list()
@@ -370,9 +346,25 @@ local function list()
     return res
 end
 
+--- Postprocess arguments.
+-- Mostly useful for postprocessing net.box and vshard call results.
+--
+-- * Substitute all `box.NULL` with `nil`;
+-- * Repair metatables of error objects because they are not transfered over network;
+-- * Extend stacktrace of remote call if possible;
+--
+-- @within errors
+-- @function wrap
+-- @param[opt] ...
+-- @return Postprocessed values
+local function wrap(...)
+    return wrap_with_suffix('during wrapped call', ...)
+end
+
 return {
     list = list,
     new_class = new_class,
     netbox_call = netbox_call,
     netbox_eval = netbox_eval,
+    wrap = wrap,
 }

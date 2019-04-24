@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Implement `wrap()` function for postprocessing net.box call results
+
 ## [2.0.1] - 2018-12-20
 ### Fixed
 
