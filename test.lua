@@ -59,7 +59,7 @@ local function check_error(test, got, expected)
     test:is(got.str, tostring(got.str), 'tostring')
 end
 
-test:plan(35)
+test:plan(36)
 
 --- e:new() -------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -72,6 +72,26 @@ test:test('return e:new()', check_error, err,
         err = '',
         str = '^My error: \n' ..
             'stack traceback:\n'
+    }
+)
+
+local function lvl1()
+    local e = my_error:new(3)
+    return e
+end
+local function lvl2()
+    local e = lvl1()
+    return e
+end
+local _l, err = get_line(), lvl2()
+test:test('return e:new(level)', check_error, err,
+    {
+        file = current_file,
+        line = _l,
+        err = '',
+        str = '^My error: \n' ..
+            'stack traceback:\n' ..
+                string.format('\t%s:%d: ', current_file, _l)
     }
 )
 

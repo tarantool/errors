@@ -112,7 +112,7 @@ function error_class:new(...)
     local stack = nil
 
     if self.capture_stack then
-        stack = string.strip(debug.traceback("", 2))
+        stack = string.strip(debug.traceback("", level))
         str = str .. '\n' .. stack
     end
 
