@@ -366,7 +366,8 @@ end
 -- @tparam string fmt
 -- @param[opt] ...
 local function errors_new(class_name, ...)
-    return new_class(class_name):new(...)
+    local error_class = _G._error_classes[class_name] or new_class(class_name)
+    return error_class:new(...)
 end
 
 --- Shortcut for `error_class:pcall`.
@@ -378,7 +379,8 @@ end
 -- @tparam function fn
 -- @param[opt] ...
 local function errors_pcall(class_name, ...)
-    return new_class(class_name):pcall(...)
+    local error_class = _G._error_classes[class_name] or new_class(class_name)
+    return error_class:pcall(...)
 end
 
 --- Shortcut for `error_class:assert`.
@@ -390,7 +392,8 @@ end
 -- @param cond condition to be checked
 -- @param[opt] ... `error_class:new` args
 local function errors_assert(class_name, ...)
-    return new_class(class_name):assert(...)
+    local error_class = _G._error_classes[class_name] or new_class(class_name)
+    return error_class:assert(...)
 end
 
 return {
