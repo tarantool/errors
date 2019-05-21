@@ -37,7 +37,6 @@ end
 
 --- Get string representation.
 -- The same as `tostring(error_object)`.
--- @see error_class.tostring
 -- @function error_object:tostring
 -- @treturn string `error_object.str`
 
@@ -136,7 +135,7 @@ local function pack(...)
     return select('#', ...), {...}
 end
 
---- Perform protected Lua call, gathering error as object
+--- Perform protected Lua call, gathering error as object.
 -- @tparam function fn called function
 -- @param[opt] ... call arguments
 -- @return[1] `fn(...)` if the call succeeds without errors
@@ -172,7 +171,7 @@ end
 -- @param[opt] ... `error_class:new` args
 -- @return cond
 -- @return ...
--- @raise (`error_object`) `error_class:new(fmt, ...)`
+-- @raise (`error_object`) `error_class:new(...)`
 function error_class:assert(cond, ...)
     checks('error_class', '?')
 
@@ -189,11 +188,6 @@ function error_class:assert(cond, ...)
     return cond, ...
 end
 
---- Get string representation.
--- Due to the nature of Lua, any class_name inconsistencies are ignored.
--- @see error_object:tostring
--- @tparam error_object err
--- @treturn string `error_object.str`
 function error_class.tostring(err)
     return err.str
 end
@@ -202,9 +196,9 @@ end
 -- @within errors
 -- @function new_class
 -- @tparam string class_name
--- @tparam ?table options Behaviour tuning options
--- @tparam ?boolean options.capture_stack Capture backtrace at creation
--- @tparam ?boolean options.log_on_creation Produce error log at creation
+-- @tparam[opt] table options Behaviour tuning options
+-- @tparam boolean options.capture_stack Capture backtrace at creation
+-- @tparam boolean options.log_on_creation Produce error log at creation
 -- @treturn error_class
 local function new_class(class_name, options)
     checks('string', {
@@ -361,10 +355,52 @@ local function wrap(...)
     return wrap_with_suffix('during wrapped call', ...)
 end
 
+
+--- Shortcut for `error_class:new`.
+-- Equivalent for `errors.new_class(class_name):new()`
+--
+-- @within errors
+-- @function new
+-- @tparam string class_name
+-- @tparam[opt] number level
+-- @tparam string fmt
+-- @param[opt] ...
+local function errors_new(class_name, ...)
+    return new_class(class_name):new(...)
+end
+
+--- Shortcut for `error_class:pcall`.
+-- Equivalent for `errors.new_class(class_name):pcall()`
+--
+-- @within errors
+-- @function pcall
+-- @tparam string class_name
+-- @tparam function fn
+-- @param[opt] ...
+local function errors_pcall(class_name, ...)
+    return new_class(class_name):pcall(...)
+end
+
+--- Shortcut for `error_class:assert`.
+-- Equivalent for `errors.new_class(class_name):assert()`
+--
+-- @within errors
+-- @function assert
+-- @tparam string class_name
+-- @param cond condition to be checked
+-- @param[opt] ... `error_class:new` args
+local function errors_assert(class_name, ...)
+    return new_class(class_name):assert(...)
+end
+
 return {
     list = list,
     new_class = new_class,
     netbox_call = netbox_call,
     netbox_eval = netbox_eval,
     wrap = wrap,
+
+    new = errors_new,
+    pcall = errors_pcall,
+    assert = errors_assert,
 }

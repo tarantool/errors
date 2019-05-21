@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Implement `wrap()` function for postprocessing net.box call results
+- Shortcut functions `errors.new`, `errors.pcall`, `errors.assert`
 
 ## [2.0.1] - 2018-12-20
 ### Fixed

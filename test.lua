@@ -59,7 +59,7 @@ local function check_error(test, got, expected)
     test:is(got.str, tostring(got.str), 'tostring')
 end
 
-test:plan(36)
+test:plan(39)
 
 --- e:new() -------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -342,13 +342,13 @@ test:test('netbox_eval("error(table)")', check_error, err,
     }
 )
 
-local _l, err = get_line(), errors.netbox_eval(conn, 'local err = my_error:new("﻿Aqua Steel") return err')
+local _l, err = get_line(), errors.netbox_eval(conn, 'local err = my_error:new("Aqua Steel") return err')
 test:test('netbox_eval("return e:new()")', check_error, err,
     {
         file = 'eval',
         line = 1,
-        err = '﻿Aqua Steel',
-        str = '^My error: ﻿Aqua Steel\n' ..
+        err = 'Aqua Steel',
+        str = '^My error: Aqua Steel\n' ..
             'stack traceback:\n' ..
                 '\teval:1: in main chunk\n' ..
             '.+\n' ..
@@ -511,13 +511,13 @@ test:test('wrap fn() return 1, true, nil, "4", e:new(), box.NULL, {}, false end'
     test:is(ret[8], false, '[8] == false')
 end)
 
-local _l, _, err = get_line(), errors.wrap(conn:eval('return nil, my_error:new("﻿Aqua ﻿Aluminium")'))
+local _l, _, err = get_line(), errors.wrap(conn:eval('return nil, my_error:new("Aqua Aluminium")'))
 test:test('wrap conn:eval("return nil, e:new()")', check_error, err,
     {
         file = 'eval',
         line = 1,
-        err = '﻿Aqua ﻿Aluminium',
-        str = '^My error: ﻿Aqua ﻿Aluminium\n' ..
+        err = 'Aqua Aluminium',
+        str = '^My error: Aqua Aluminium\n' ..
             'stack traceback:\n' ..
                 '\teval:1: in main chunk\n' ..
             '.+\n' ..
@@ -582,5 +582,47 @@ test:test('wrap conn:call(return "1", nil, false, nil)', function(test)
     test:is(type(ret[4]), 'nil',
                            '[4] == nil')
 end)
+
+--- shortcuts -----------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+local _l, err = get_line(), errors.new('ErrorNew', 'Grey Zinc')
+test:test('return errors.new(class_name, message)', check_error, err,
+    {
+        file = current_file,
+        line = _l,
+        err = 'Grey Zinc',
+        str = '^ErrorNew: Grey Zinc\n' ..
+            'stack traceback:\n' ..
+                string.format('\t%s:%d: ', current_file, _l)
+    }
+)
+
+local _l, fn = get_line(), function() error('Teal Brass') end
+local _, etxt = pcall(fn)
+local _, err = errors.pcall('ErrorPCall', fn)
+test:test('errors.pcall(error, message)', check_error, err,
+    {
+        file = current_file,
+        line = _l,
+        err = etxt,
+        str = '^ErrorPCall: ' .. etxt .. '\n' ..
+            'stack traceback:\n' ..
+                string.format('\t%s:%d: ', current_file, _l)
+    }
+)
+
+local _l, fn = get_line(), function() errors.assert('ErrorAssert', false, 'Maroon Silver') end
+local _, err = pcall(fn)
+test:test('errors.assert(class_name, false, message)', check_error, err,
+    {
+        file = current_file,
+        line = _l,
+        err = 'Maroon Silver',
+        str = '^ErrorAssert: Maroon Silver\n' ..
+            'stack traceback:\n' ..
+                string.format('\t%s:%d: ', current_file, _l)
+    }
+)
 
 os.exit(test:check() and 0 or 1)
