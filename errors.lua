@@ -3,45 +3,22 @@
 local log = require('log')
 local debug = require('debug')
 local checks = require('checks')
+local deprecate = require('errors.deprecate')
 
 --- Convenient error handling in Tarantool.
 -- @module errors
+
+--- Functions.
+-- @section functions
+
+--- Functions (shortcuts).
+-- @section shortcuts
 
 if rawget(_G, "_error_classes") == nil then
     _G._error_classes = {}
 end
 
---- The errors are represented as Lua tables of the following structure.
--- @type error_object
-
---- Class name.
--- @field error_object.class_name
-
---- Error payload.
--- Either formatted string or any other payload passed at object creation.
--- @field error_object.err
-
---- String representation.
--- This includes `class_name` and `err`.
--- And optional `stack`, if it was not disabled for this class.
--- @field error_object.str
-
---- Stacktrace recordered at creation.
--- @field error_object.stack
-
---- Filename issued an error.
--- @field error_object.file
-
---- Line number issued an error.
--- @field error_object.line
-
---- Get string representation.
--- The same as `tostring(error_object)`.
--- @function error_object:tostring
--- @treturn string `error_object.str`
-
---- An error class
--- @field __type error class name
+---
 -- @type error_class
 local error_class = {
     __type = 'error_class'
@@ -188,12 +165,31 @@ function error_class:assert(cond, ...)
     return cond, ...
 end
 
+--- A particular error object.
+-- Represented as a Lua table with the following fields:
+--
+-- * class_name: (`string`)
+-- * err: (`string`)
+-- * file: (`string`)
+-- * line: (`number`)
+-- * stack: (`string`)
+--
+-- @type error_object
+
+--- Get string representation.
+-- Including `class_name` and `err`.
+-- And optional `stack`, if it was not disabled for this class.
+--
+-- @function tostring
+-- @treturn string
 function error_class.tostring(err)
     return err.str
 end
 
+--- Functions.
+-- @section functions
+
 --- Create new error class.
--- @within errors
 -- @function new_class
 -- @tparam string class_name
 -- @tparam[opt] table options Behaviour tuning options
@@ -287,7 +283,6 @@ local e_netbox_eval = new_class('Net.box eval failed')
 -- Execute code on remote server using Tarantool built-in [`net.box` `conn:eval`](
 -- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-eval).
 -- Additionally postprocess returned values with `wrap`.
--- @within errors
 -- @see netbox_call
 -- @function netbox_eval
 -- @param conn net.box connection object
@@ -312,7 +307,6 @@ local e_netbox_call = new_class('Net.box call failed')
 -- execute code on remote server using Tarantool built-in [`net.box` `conn:call`](
 -- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-call).
 -- Additionally postprocess returned values with `wrap`.
--- @within errors
 -- @see netbox_eval
 -- @function netbox_call
 -- @param conn net.box connection object
@@ -347,7 +341,6 @@ end
 -- * Repair metatables of error objects because they are not transfered over network;
 -- * Extend stacktrace of remote call if possible;
 --
--- @within errors
 -- @function wrap
 -- @param[opt] ...
 -- @return Postprocessed values
@@ -355,11 +348,12 @@ local function wrap(...)
     return wrap_with_suffix('during wrapped call', ...)
 end
 
+--- Functions (shortcuts).
+-- @section shortcuts
 
 --- Shortcut for `error_class:new`.
--- Equivalent for `errors.new_class(class_name):new()`
+--    errors.new_class(class_name):new(...)
 --
--- @within errors
 -- @function new
 -- @tparam string class_name
 -- @tparam[opt] number level
@@ -371,9 +365,9 @@ local function errors_new(class_name, ...)
 end
 
 --- Shortcut for `error_class:pcall`.
--- Equivalent for `errors.new_class(class_name):pcall()`
+-- Equivalent for
+--    errors.new_class(class_name):pcall(...)
 --
--- @within errors
 -- @function pcall
 -- @tparam string class_name
 -- @tparam function fn
@@ -384,9 +378,8 @@ local function errors_pcall(class_name, ...)
 end
 
 --- Shortcut for `error_class:assert`.
--- Equivalent for `errors.new_class(class_name):assert()`
+--    errors.new_class(class_name):assert(...)
 --
--- @within errors
 -- @function assert
 -- @tparam string class_name
 -- @param cond condition to be checked
@@ -406,4 +399,26 @@ return {
     new = errors_new,
     pcall = errors_pcall,
     assert = errors_assert,
+
+--- Tools for API deprecation.
+-- @section deprecate
+
+    --- Issue deprecation error.
+    -- Do it once for every location in code,
+    -- which points on the second-level caller.
+    --
+    -- @function deprecate
+    -- @tparam string message
+    -- @treturn error_object
+    deprecate = deprecate.warn,
+
+    --- Set new deprecation handler.
+    -- It may be used in tests and development environment
+    -- to turn warnings into noticable errors.
+    --
+    -- By default (if handler is `nil`) all errors are logged using `log.warn()`.
+    --
+    -- @function set_deprecation_handler
+    -- @tparam nil|functon fn
+    set_deprecation_handler = deprecate.set_handler,
 }

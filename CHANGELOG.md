@@ -12,8 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Implement `wrap()` function for postprocessing net.box call results
+- Implement `wrap` function for postprocessing net.box call results
 - Shortcut functions `errors.new`, `errors.pcall`, `errors.assert`
+- Implement API deprecation tools: `errors.deprecate` and `errors.set_deprecation_handler`
 
 ## [2.0.1] - 2018-12-20
 ### Fixed
@@ -31,7 +32,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 
 - Monkey-patching `net.box`
-
 
 ## [1.0.0] - 2018-09-06
 ### Added

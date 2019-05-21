@@ -22,6 +22,7 @@ build = {
     install = {
         lua = {
             ['errors'] = 'errors.lua',
+            ['errors.deprecate'] = 'errors/deprecate.lua',
         },
     },
     build_variables = {
