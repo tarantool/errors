@@ -1,18 +1,29 @@
 #!/usr/bin/env tarantool
 
 local log = require('log')
-local checks = require('checks')
 
 local handler = nil
 local errors_issued = {}
 
 local function set_handler(fn)
-    checks('?function')
-    handler = fn
+    if fn ~= nil and type(fn) ~= 'function' then
+        error('Bad argument #1 to errors.set_deprecation_handler' ..
+            ' (?function expected, got ' .. type(fn) .. ')', 2)
+    end
+
+    if fn == nil then
+        handler = nil
+    else
+        handler = fn
+    end
 end
 
 local function warn(message)
-    checks('string')
+    if type(message) ~= 'string' then
+        error('Bad argument #1 to errors.deprecate' ..
+            ' (string expected, got ' .. type(message) .. ')', 2)
+    end
+
     local level = 3 -- the function above the caller
     local frame = debug.getinfo(level, "Sl")
 

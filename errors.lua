@@ -2,7 +2,6 @@
 
 local log = require('log')
 local debug = require('debug')
-local checks = require('checks')
 local deprecate = require('errors.deprecate')
 
 --- Convenient error handling in Tarantool.
@@ -43,7 +42,10 @@ end
 -- @param[opt] ... formatting arguments
 -- @treturn error_object
 function error_class:new(...)
-    checks('error_class')
+    local self_mt = getmetatable(self)
+    if not self_mt or self_mt.__type ~= 'error_class' then
+        error('Use error_class:new() instead of error_class.new()', 2)
+    end
 
     local level, shift
     if type(nil or ...) == 'number' then
@@ -119,7 +121,10 @@ end
 -- @treturn[2] nil
 -- @treturn[2] error_object
 function error_class:pcall(fn, ...)
-    checks('error_class', '?')
+    local self_mt = getmetatable(self)
+    if not self_mt or self_mt.__type ~= 'error_class' then
+        error('Use error_class:pcall() instead of error_class.pcall()', 2)
+    end
 
     local function collect(estr)
         if estr == nil
@@ -150,7 +155,10 @@ end
 -- @return ...
 -- @raise (`error_object`) `error_class:new(...)`
 function error_class:assert(cond, ...)
-    checks('error_class', '?')
+    local self_mt = getmetatable(self)
+    if not self_mt or self_mt.__type ~= 'error_class' then
+        error('Use error_class:assert() instead of error_class.assert()', 2)
+    end
 
     if not cond then
         if select('#', ...) == 0 then
@@ -192,30 +200,50 @@ end
 --- Create new error class.
 -- @function new_class
 -- @tparam string class_name
--- @tparam[opt] table options Behaviour tuning options
--- @tparam boolean options.capture_stack Capture backtrace at creation
--- @tparam boolean options.log_on_creation Produce error log at creation
+-- @tparam[opt] table options
+-- @tparam boolean options.capture_stack
+--   Capture backtrace at creation.
+--   (default: **true**)
+-- @tparam boolean options.log_on_creation
+--   Produce error log at creation.
+--   (default: **false**)
 -- @treturn error_class
 local function new_class(class_name, options)
-    checks('string', {
-        capture_stack = '?boolean',
-        log_on_creation = '?boolean',
-    })
-
-    local capture_stack = options and options.capture_stack
-    if capture_stack == nil then
-        capture_stack = true
+    if type(class_name) ~= 'string' then
+        error('Bad argument #1 to errors.new_class' ..
+            ' (string expected, got ' .. type(class_name) .. ')', 2)
     end
 
-    local log_on_creation = options and options.log_on_creation
-    if log_on_creation == nil then
-        log_on_creation = false
+    if options == nil then
+        options = {}
+    elseif type(options) ~= 'table' then
+        error('Bad argument #2 to errors.new_class' ..
+            ' (?table expected, got ' .. type(options) .. ')', 2)
+    end
+
+    local _opts = {
+        capture_stack = true,
+        log_on_creation = false,
+    }
+    for opt, value in pairs(options) do
+        if type(_opts[opt]) ~= 'nil' then
+            error('Unexpected argument options.' .. opt ..
+                ' to errors.new_class', 2)
+        elseif value ~= nil and type(value) ~= 'boolean' then
+            error('Bad argument options.' .. opt ..
+                ' to errors.new_class' ..
+                ' (boolean expected, got ' .. type(value) .. ')', 2)
+        end
+
+        if value ~= nil then
+            _opts[opt] = value
+        end
     end
 
     local self = {
         name = class_name,
-        capture_stack = capture_stack,
-        log_on_creation = log_on_creation,
+        capture_stack = _opts.capture_stack,
+        log_on_creation = _opts.log_on_creation,
         __instance_mt = {
             __type = class_name,
             __tostring = error_class.tostring,
@@ -252,7 +280,6 @@ local function restore_mt(err)
 end
 
 local function wrap_with_suffix(suffix_format, ...)
-    checks('string|table')
     local n, ret = pack(...)
     for i = 1, n do
         local obj = ret[i]
@@ -293,7 +320,13 @@ local e_netbox_eval = new_class('Net.box eval failed')
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
 local function netbox_eval(conn, code, ...)
-    checks('table', 'string')
+    if type(conn) ~= 'table' then
+        error('Bad argument #1 to errors.netbox_eval' ..
+            ' (net.box connection expected, got ' .. type(conn) .. ')', 2)
+    elseif type(code) ~= 'string' then
+        error('Bad argument #2 to errors.netbox_eval' ..
+            ' (string expected, got ' .. type(code) .. ')', 2)
+    end
 
     return wrap_with_suffix(
         {'during net.box eval on %s:%s', conn.host, conn.port},
@@ -317,7 +350,14 @@ local e_netbox_call = new_class('Net.box call failed')
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
 local function netbox_call(conn, func_name, ...)
-    checks('table', 'string')
+    if type(conn) ~= 'table' then
+        error('Bad argument #1 to errors.netbox_call' ..
+            ' (net.box connection expected, got ' .. type(conn) .. ')', 2)
+    elseif type(func_name) ~= 'string' then
+        error('Bad argument #2 to errors.netbox_call' ..
+            ' (string expected, got ' .. type(func_name) .. ')', 2)
+    end
+
     return wrap_with_suffix(
         {'during net.box call to %s:%s, function %q', conn.host, conn.port, func_name},
         e_netbox_call:pcall(conn.call, conn, func_name, ...)

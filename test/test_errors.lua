@@ -3,7 +3,6 @@
 local fio = require('fio')
 local tap = require('tap')
 local json = require('json')
-local checks = require('checks')
 local errors = require('errors')
 local netbox = require('net.box')
 local tempdir = fio.tempdir()
@@ -26,6 +25,18 @@ local current_file = debug.getinfo(1, 'S').short_src
 local function get_line()
     return debug.getinfo(2, 'l').currentline
 end
+
+local fn_4args = {"1", nil, false, nil}
+local remote_4args_fn = function(a1, a2, a3, a4)
+    -- during netbox call fn_args are converted to
+    -- "1", box.NULL, false, nil
+    assert(a1 == fn_4args[1] and type(a1) == 'string')
+    assert(a2 == fn_4args[2] and type(a2) == 'cdata')
+    assert(a3 == fn_4args[3] and type(a3) == 'boolean')
+    assert(a4 == fn_4args[4] and type(a4) == 'nil')
+    return a1, a2, a3, a4
+end
+_G.remote_4args_fn = remote_4args_fn
 
 local function check_error(test, got, expected)
     test:plan(6)
@@ -463,15 +474,7 @@ test:test('netbox_call(return nil, e:new(string))', check_error, err,
     }
 )
 
-local fn_args = {"1", nil, false, nil}
-local remote_fn = function(a1, a2, a3, a4)
-    checks('string', 'cdata', 'boolean', 'nil')
-    -- during netbox call args are converted to
-    -- "1", box.NULL, false, nil
-    return a1, a2, a3, a4
-end
-_G.remote_fn = remote_fn
-local ret = {errors.netbox_call(conn, 'remote_fn', fn_args)}
+local ret = {errors.netbox_call(conn, 'remote_4args_fn', fn_4args)}
 test:test('netbox_call(return "1", nil, false, nil)', function(test)
     test:plan(4)
     test:is(ret[1], '1',   '[1] == "1"')
@@ -564,15 +567,7 @@ test:test('warp conn:call(return nil, e:new(string))', check_error, err,
     }
 )
 
-local fn_args = {"1", nil, false, nil}
-local remote_fn = function(a1, a2, a3, a4)
-    checks('string', 'cdata', 'boolean', 'nil')
-    -- during netbox call args are converted to
-    -- "1", box.NULL, false, nil
-    return a1, a2, a3, a4
-end
-_G.remote_fn = remote_fn
-local ret = {errors.wrap(conn:call('remote_fn', fn_args))}
+local ret = {errors.wrap(conn:call('remote_4args_fn', fn_4args))}
 test:test('wrap conn:call(return "1", nil, false, nil)', function(test)
     test:plan(4)
     test:is(ret[1], '1',   '[1] == "1"')
