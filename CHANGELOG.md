@@ -6,9 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.1.0] - 2018-05-27
+
 ### Fixed
 
-- Proper debug.traceback level
+- Use proper `debug.traceback` level for traces
 
 ### Added
 
