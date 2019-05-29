@@ -226,7 +226,7 @@ local function new_class(class_name, options)
         log_on_creation = false,
     }
     for opt, value in pairs(options) do
-        if type(_opts[opt]) ~= 'nil' then
+        if type(_opts[opt]) == 'nil' then
             error('Unexpected argument options.' .. opt ..
                 ' to errors.new_class', 2)
         elseif value ~= nil and type(value) ~= 'boolean' then
