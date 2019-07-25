@@ -1,0 +1,29 @@
+version: '3'
+services:
+  test:
+    image: tarantool/tarantool:1.x-centos7
+    command: tarantool taptest.lua
+    working_dir: "/errors"
+    volumes:
+      - .:/errors
+    environment:
+      - TRAVIS=true
+      - CI=true
+      - COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN}
+      - TRAVIS_JOB_ID=${TRAVIS_JOB_ID}
+      - TRAVIS_BRANCH=${TRAVIS_BRANCH}
+      - TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG}
+
+  coverage:
+    build: .
+    command: luacov-coveralls -v
+    working_dir: "/errors"
+    environment:
+      - TRAVIS=true
+      - CI=true
+      - COVERALLS_REPO_TOKEN=${COVERALLS_REPO_TOKEN}
+      - TRAVIS_JOB_ID=${TRAVIS_JOB_ID}
+      - TRAVIS_BRANCH=${TRAVIS_BRANCH}
+      - TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG}
+    volumes:
+      - ".:/errors/"

@@ -1,5 +1,4 @@
 #!/usr/bin/env tarantool
-
 local fio = require('fio')
 
 function merge(t1, t2)
