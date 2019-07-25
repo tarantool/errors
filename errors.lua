@@ -1,5 +1,4 @@
 #!/usr/bin/env tarantool
-
 local log = require('log')
 local debug = require('debug')
 local deprecate = require('errors.deprecate')

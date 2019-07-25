@@ -1,5 +1,6 @@
 # Convenient error handling in tarantool
 [![Build Status][travis-badge]][travis-url]
+[![Code Coverage][coverage-badge]][coverage-url]
 
 Because Lua code deserves better error handling. This module helps you
 understand what code path lead to creation of a particular exception
@@ -45,3 +46,5 @@ inside the exception object. It can be converted to string using the
 
 [travis-badge]: https://api.travis-ci.org/Satbek/errors.svg?branch=master
 [travis-url]: https://travis-ci.org/Satbek/errors
+[coverage-badge]: https://coveralls.io/repos/github/Satbek/errors/badge.svg?branch=master
+[coverage-url]: https://coveralls.io/github/Satbek/errors
