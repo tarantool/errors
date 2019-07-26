@@ -4,3 +4,4 @@
 release
 release-doc
 doc
+luacov.*

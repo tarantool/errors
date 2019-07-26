@@ -1,4 +1,5 @@
 #!/usr/bin/env tarantool
+pcall(require, "luacov")
 
 local fio = require('fio')
 local tap = require('tap')

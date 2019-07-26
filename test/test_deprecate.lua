@@ -1,4 +1,5 @@
 #!/usr/bin/env tarantool
+pcall(require, "luacov")
 
 local log = require('log')
 local tap = require('tap')
