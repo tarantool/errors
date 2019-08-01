@@ -1,3 +1,5 @@
+[![pipeline status](https://gitlab.com/tarantool/enterprise/errors/badges/master/pipeline.svg)](https://gitlab.com/tarantool/enterprise/errors/commits/master)
+
 # Convenient error handling in tarantool
 
 Because Lua code deserves better error handling. This module helps you
