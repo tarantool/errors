@@ -39,7 +39,7 @@ end
 _G.remote_4args_fn = remote_4args_fn
 
 local function check_error(test, got, expected)
-    test:plan(6)
+    test:plan(8)
 
     if not test:ok(got, 'have error') then
         test:diag('Got %s', got)
@@ -66,7 +66,10 @@ local function check_error(test, got, expected)
     end
 
     test:is(got.err, expected.err, 'err')
-    test:like(got.str, expected.str, 'str')
+    local err_str, err_stack = unpack(expected.str:split('\n', 1))
+    test:like(got.str, err_str, 'str')
+    test:like(got.stack, err_stack, 'stack')
+    test:like(got:tostring(), expected.str, 'newstyle tostring')
     test:is(got.str, tostring(got.str), 'tostring')
 end
 

@@ -91,11 +91,11 @@ function error_class:new(...)
 
     if self.capture_stack then
         stack = string.strip(debug.traceback("", level))
-        str = str .. '\n' .. stack
+        str = str
     end
 
     if self.log_on_creation then
-        log.error(str)
+        log.error(string.format("%s\n%s", str, stack))
     end
 
     local e = {
@@ -191,7 +191,7 @@ end
 -- @function tostring
 -- @treturn string
 function error_class.tostring(err)
-    return err.str
+    return string.format('%s\n%s', err.str, err.stack)
 end
 
 --- Functions.
@@ -296,7 +296,7 @@ local function wrap_with_suffix(suffix_format, ...)
                     stack_suffix = string.format(unpack(suffix_format))
                 end
 
-                obj.str = obj.str .. '\n' .. stack_suffix .. '\n' .. stack
+                obj.str = obj.str
                 obj.stack = obj.stack .. '\n' .. stack_suffix .. '\n' .. stack
             end
         end
