@@ -191,7 +191,11 @@ end
 -- @function tostring
 -- @treturn string
 function error_class.tostring(err)
-    return string.format('%s\n%s', err.str, err.stack or '')
+    local ret = err.str
+    if err.stack ~= nil then
+        ret = ret .. '\n' .. err.stack
+    end
+    return ret
 end
 
 --- Functions.

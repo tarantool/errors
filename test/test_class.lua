@@ -15,7 +15,7 @@ local err = e_nostack:new()
 test:test('capture_stack = false', function(subtest)
     subtest:plan(2)
     subtest:is(err.stack, nil, 'check stack is nil')
-    subtest:is(err:tostring(), 'No-stack error: \n', "check tostring() doesn't contains stacktrace")
+    subtest:is(err:tostring(), 'No-stack error: ', "check tostring() doesn't contains stacktrace")
 end)
 -------------------------------------------------------------------------------
 
