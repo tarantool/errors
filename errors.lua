@@ -296,7 +296,6 @@ local function wrap_with_suffix(suffix_format, ...)
                     stack_suffix = string.format(unpack(suffix_format))
                 end
 
-                obj.str = obj.str
                 obj.stack = obj.stack .. '\n' .. stack_suffix .. '\n' .. stack
             end
         end
