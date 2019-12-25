@@ -91,11 +91,6 @@ function error_class:new(...)
 
     if self.capture_stack then
         stack = string.strip(debug.traceback("", level))
-        str = str
-    end
-
-    if self.log_on_creation then
-        log.error(string.format("%s\n%s", str, stack))
     end
 
     local e = {
@@ -107,6 +102,11 @@ function error_class:new(...)
         class_name = self.name
     }
     setmetatable(e, self.__instance_mt)
+
+    if self.log_on_creation then
+        log.error(e:tostring())
+    end
+
     return e
 end
 
