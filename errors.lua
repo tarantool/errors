@@ -191,7 +191,7 @@ end
 -- @function tostring
 -- @treturn string
 function error_class.tostring(err)
-    return string.format('%s\n%s', err.str, err.stack)
+    return string.format('%s\n%s', err.str, err.stack or '')
 end
 
 --- Functions.
