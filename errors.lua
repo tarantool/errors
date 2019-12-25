@@ -91,11 +91,6 @@ function error_class:new(...)
 
     if self.capture_stack then
         stack = string.strip(debug.traceback("", level))
-        str = str .. '\n' .. stack
-    end
-
-    if self.log_on_creation then
-        log.error(str)
     end
 
     local e = {
@@ -107,6 +102,11 @@ function error_class:new(...)
         class_name = self.name
     }
     setmetatable(e, self.__instance_mt)
+
+    if self.log_on_creation then
+        log.error(e:tostring())
+    end
+
     return e
 end
 
@@ -191,7 +191,11 @@ end
 -- @function tostring
 -- @treturn string
 function error_class.tostring(err)
-    return err.str
+    local ret = err.str
+    if err.stack ~= nil then
+        ret = ret .. '\n' .. err.stack
+    end
+    return ret
 end
 
 --- Functions.
@@ -296,7 +300,6 @@ local function wrap_with_suffix(suffix_format, ...)
                     stack_suffix = string.format(unpack(suffix_format))
                 end
 
-                obj.str = obj.str .. '\n' .. stack_suffix .. '\n' .. stack
                 obj.stack = obj.stack .. '\n' .. stack_suffix .. '\n' .. stack
             end
         end

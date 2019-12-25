@@ -12,8 +12,11 @@ test:plan(7)
 
 local e_nostack = errors.new_class('No-stack error', {capture_stack = false})
 local err = e_nostack:new()
-test:is(err.stack, nil, 'capture_stack = false')
-
+test:test('capture_stack = false', function(subtest)
+    subtest:plan(2)
+    subtest:is(err.stack, nil, 'check stack is nil')
+    subtest:is(err:tostring(), 'No-stack error: ', "check tostring() doesn't contains stacktrace")
+end)
 -------------------------------------------------------------------------------
 
 local _log

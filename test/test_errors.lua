@@ -66,8 +66,8 @@ local function check_error(test, got, expected)
     end
 
     test:is(got.err, expected.err, 'err')
-    test:like(got.str, expected.str, 'str')
-    test:is(got.str, tostring(got.str), 'tostring')
+    test:like(tostring(got), expected.str, 'tostring()')
+    test:is(tostring(got), got:tostring(), ':tostring')
 end
 
 test:plan(39)
