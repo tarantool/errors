@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.1.2] - 2020-01-17
+
+### Fixed
+
+- Remove duplicate stack trace from `error.str` field
+
 ## [2.1.1] - 2019-05-29
 
 ### Fixed
