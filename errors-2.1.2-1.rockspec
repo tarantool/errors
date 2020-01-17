@@ -1,8 +1,8 @@
 package = 'errors'
-version = '2.1.1-1'
+version = '2.1.2-1'
 source = {
     url = 'git+https://github.com/tarantool/errors.git',
-    tag = '2.1.1',
+    tag = '2.1.2',
 }
 
 description = {
@@ -25,7 +25,7 @@ build = {
         },
     },
     build_variables = {
-        version = '2.1.1-1',
+        version = '2.1.2-1',
     },
     install_pass = false,
     copy_directories = {'doc'},
