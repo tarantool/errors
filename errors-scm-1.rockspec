@@ -1,13 +1,13 @@
 package = 'errors'
 version = 'scm-1'
 source = {
-    url = 'git+ssh://git@gitlab.com/tarantool/enterprise/errors.git',
+    url = 'git+https://github.com/tarantool/errors.git',
     branch = 'master',
 }
 
 description = {
     summary = 'Convenient error handling in tarantool',
-    homepage = 'https://gitlab.com/tarantool/enterprise/errors',
+    homepage = 'https://github.com/tarantool/errors',
     license = 'BSD',
 }
 
