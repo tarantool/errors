@@ -317,7 +317,7 @@ test:test('netbox_eval(invalid_syntax)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
         err = [[eval:1: unexpected symbol near '=']],
-        str = '^Net.box eval failed: .+\n' ..
+        str = '^NetboxEvalError: .+\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -329,7 +329,7 @@ test:test('netbox_eval("error(string)")', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
         err = 'eval:1: Olive Brass',
-        str = '^Net.box eval failed: eval:1: Olive Brass\n' ..
+        str = '^NetboxEvalError: eval:1: Olive Brass\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -346,7 +346,7 @@ test:test('netbox_eval("error(table)")', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
         err = '{"metal":"mercury"}',
-        str = '^Net.box eval failed: {%"metal%":%"mercury%"}\n' ..
+        str = '^NetboxEvalError: {%"metal%":%"mercury%"}\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -418,7 +418,7 @@ test:test('netbox_eval(closed_connection)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
         err = 'Connection closed',
-        str = '^Net.box eval failed: Connection closed\n' ..
+        str = '^NetboxEvalError: Connection closed\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -431,7 +431,7 @@ test:test('netbox_eval(connection_refused)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
         err = 'Connection refused',
-        str = '^Net.box eval failed: Connection refused\n' ..
+        str = '^NetboxEvalError: Connection refused\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -449,7 +449,7 @@ test:test('netbox_call(fn_undefined)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
         err = [[Procedure 'fn_undefined' is not defined]],
-        str = '^Net.box call failed: .+\n' ..
+        str = '^NetboxCallError: .+\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)

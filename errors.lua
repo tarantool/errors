@@ -308,7 +308,7 @@ local function wrap_with_suffix(suffix_format, ...)
     return unpack(ret, 1, n)
 end
 
-local e_netbox_eval = new_class('Net.box eval failed')
+local NetboxEvalError = new_class('NetboxEvalError')
 --- Do protected net.box evaluation.
 -- Execute code on remote server using Tarantool built-in [`net.box` `conn:eval`](
 -- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-eval).
@@ -333,11 +333,11 @@ local function netbox_eval(conn, code, ...)
 
     return wrap_with_suffix(
         {'during net.box eval on %s:%s', conn.host, conn.port},
-        e_netbox_eval:pcall(conn.eval, conn, code, ...)
+        NetboxEvalError:pcall(conn.eval, conn, code, ...)
     )
 end
 
-local e_netbox_call = new_class('Net.box call failed')
+local NetboxCallError = new_class('NetboxCallError')
 --- Perform protected net.box call.
 -- Similar to `netbox_eval`,
 -- execute code on remote server using Tarantool built-in [`net.box` `conn:call`](
@@ -363,7 +363,7 @@ local function netbox_call(conn, func_name, ...)
 
     return wrap_with_suffix(
         {'during net.box call to %s:%s, function %q', conn.host, conn.port, func_name},
-        e_netbox_call:pcall(conn.call, conn, func_name, ...)
+        NetboxCallError:pcall(conn.call, conn, func_name, ...)
     )
 end
 

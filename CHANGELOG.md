@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Rename netbox error classes to conform the naming conventions:
+  "Net.box eval failed" -> "NetboxEvalError",
+  "Net.box call failed" -> "NetboxCallError".
+
 ## [2.1.2] - 2020-01-17
 
 ### Fixed
