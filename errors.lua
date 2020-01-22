@@ -442,6 +442,7 @@ return {
     new = errors_new,
     pcall = errors_pcall,
     assert = errors_assert,
+    is_error_object = is_error_object,
 
 --- Tools for API deprecation.
 -- @section deprecate
