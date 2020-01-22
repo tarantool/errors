@@ -437,6 +437,7 @@ return {
     new_class = new_class,
     netbox_call = netbox_call,
     netbox_eval = netbox_eval,
+    is_error_object = is_error_object,
     wrap = wrap,
 
     new = errors_new,

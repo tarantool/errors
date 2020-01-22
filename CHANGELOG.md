@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Make `is_error_object` function public
+
 ## [2.1.2] - 2020-01-17
 
 ### Fixed
