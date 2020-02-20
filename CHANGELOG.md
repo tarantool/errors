@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Now function `is_error_obj(err)` is a part of public API
+
 ### Changed
 
 - Rename netbox error classes to conform the naming conventions:

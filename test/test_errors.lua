@@ -70,7 +70,7 @@ local function check_error(test, got, expected)
     test:is(tostring(got), got:tostring(), ':tostring')
 end
 
-test:plan(39)
+test:plan(40)
 
 --- e:new() -------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -619,5 +619,17 @@ test:test('errors.assert(class_name, false, message)', check_error, err,
                 string.format('\t%s:%d: ', current_file, _l)
     }
 )
+
+--- is_error_object() -------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+test:test('errors.is_error_object(err)', function(subtest)
+    subtest:plan(4)
+    local err = errors.new('error')
+    subtest:isnt(errors.is_error_object, nil)
+    subtest:is(errors.is_error_object(err), true)
+    subtest:is(errors.is_error_object({err = 'str'}), false)
+    subtest:is(errors.is_error_object(5), false)
+end)
 
 os.exit(test:check() and 0 or 1)
