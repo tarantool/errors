@@ -11,14 +11,12 @@ stages:
   tags:
     - docker
   before_script:
-    - yum -y install git gcc make unzip which
+    - yum -y install git cmake curl gcc make
     - tarantoolctl rocks install ldoc --server=http://rocks.moonscript.org
 
 build:
   extends: .in-docker
   stage: build
-  before_script:
-    - yum -y install git gcc make unzip which
   script:
     - tarantoolctl rocks make
     - ./taptest.lua
