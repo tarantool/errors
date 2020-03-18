@@ -1,30 +1,58 @@
 variables:
   DOCKER_BUILDKIT: '1'
+  ROCK_NAME: $CI_PROJECT_NAME
 
 stages:
   - build
   - publish
 
-build:
-  stage: build
+.in-docker:
+  image: tarantool/tarantool:1.x-centos7
   tags:
     - docker
-  image: tarantool/tarantool:1.x-centos7
   before_script:
     - yum -y install git gcc make unzip which
     - tarantoolctl rocks install ldoc --server=http://rocks.moonscript.org
+
+build:
+  extends: .in-docker
+  stage: build
+  before_script:
+    - yum -y install git gcc make unzip which
   script:
     - tarantoolctl rocks make
     - ./taptest.lua
-    - ./release.sh
-    - make doc
-  artifacts:
-    name: "$CI_COMMIT_REF_NAME"
-    paths:
-      - doc/
-      - release/
-      - release-doc/
 
-# publish
-include:
-  remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
+publish-scm-1-rock:
+  extends: .in-docker
+  stage: publish
+  only:
+    - master
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME.publish-scm"
+    paths:
+      - doc
+      - $ROCK_NAME-scm-1.all.rock
+  script:
+    - tarantoolctl rocks make
+    - tarantoolctl rocks pack ${ROCK_NAME}
+    - сurl --fail -X PUT -F rockspec=@$ROCK_NAME-scm-1.all.rock https://$ROCKS_USERNAME:$ROCKS_PASSWORD@rocks.tarantool.org  --help
+
+publish-release-rock:
+  extends: .in-docker
+  stage: publish
+  only:
+    - tags
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME.publish-release"
+    paths:
+      - doc
+      - $ROCK_NAME-$CI_COMMIT_TAG-1.rock
+  script:
+    - cat $ROCK_NAME-scm-1.rockspec |
+      sed -E
+      -e "s/branch = '.+'/tag = '$CI_COMMIT_TAG'/g"
+      -e "s/version = '.+'/version = '$CI_COMMIT_TAG-1'/g" > $ROCK_NAME-$CI_COMMIT_TAG-1.rockspec
+    - tarantoolctl rocks make $ROCK_NAME-$CI_COMMIT_TAG-1.rockspec
+    - tarantoolctl rocks pack ${ROCK_NAME}
+    - curl --fail -X PUT -F rockspec=$ROCK_NAME-$CI_COMMIT_TAG-1.all.rock https://$ROCKS_USERNAME:$ROCKS_PASSWORD@rocks.tarantool.org
