@@ -141,7 +141,7 @@ test:test('return e:new(table)', check_error, err,
 )
 
 local _l1, err1 = get_line(), my_error:new('Inner error')
-local _l2, err2 = get_line(), my_error:new(err1)
+local _, err2 = get_line(), my_error:new(err1)
 test:test('return e:new(e:new())', check_error, err2,
     {
         file = current_file,

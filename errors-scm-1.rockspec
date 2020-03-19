@@ -16,18 +16,10 @@ dependencies = {
 }
 
 build = {
-    type = 'make',
-    build_target = 'all',
-    install = {
-        lua = {
-            ['errors'] = 'errors.lua',
-            ['errors.deprecate'] = 'errors/deprecate.lua',
-        },
+    type = 'cmake',
+    variables = {
+        TARANTOOL_INSTALL_LUADIR = '$(LUADIR)',
     },
-    build_variables = {
-        version = 'scm-1',
-    },
-    install_pass = false,
     copy_directories = {'doc'},
 }
 

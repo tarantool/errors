@@ -57,7 +57,7 @@ function error_class:new(...)
     end
     level = level + 1 -- escape current stackframe
 
-    local err = nil
+    local err
     if (select('#', ...) < shift) then
         err = nil
     elseif (type(select(shift, ...)) == 'string') then

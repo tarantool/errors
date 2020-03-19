@@ -1,6 +1,13 @@
 .~*
 *~
 .rocks
+*.rock
 release
 release-doc
 doc
+.idea
+CMakeCache.txt
+CMakeFiles
+CTestTestfile.cmake
+build.luarocks
+cmake_install.cmake
