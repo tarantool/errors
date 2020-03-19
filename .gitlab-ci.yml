@@ -32,7 +32,7 @@ publish-scm-1-rock:
   script:
     - tarantoolctl rocks make
     - tarantoolctl rocks pack ${ROCK_NAME}
-    - сurl --fail -X PUT -F "rockspec=@$ROCK_NAME-scm-1.rockspec"
+    - curl --fail -X PUT -F "rockspec=@$ROCK_NAME-scm-1.rockspec"
       https://$ROCKS_USERNAME:$ROCKS_PASSWORD@rocks.tarantool.org
 
 publish-release-rock:
