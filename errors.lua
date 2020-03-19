@@ -24,7 +24,16 @@ local error_class = {
 }
 error_class.__index = error_class
 
-
+--- Check if the argument is an error object.
+--
+-- The check is positive if it's a table with mandatory fields:
+-- `err`, `str`, `line`, `file`, `class_name`. Their types aren't
+-- checked. Other fields are ignored.
+--
+-- @function is_error_object
+-- @within Functions
+-- @param obj
+-- @treturn boolean true/false
 local function is_error_object(err)
     return (type(err) == 'table'
         and err.err ~= nil
