@@ -1,14 +1,9 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-project(errors C)
+project(errors NONE)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
-
-# Find Tarantool and Lua dependecies
-set(TARANTOOL_FIND_REQUIRED ON)
-find_package(Tarantool)
-include_directories(${TARANTOOL_INCLUDE_DIRS})
 
 file(GLOB_RECURSE LUA_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/errors.lua"
@@ -48,14 +43,14 @@ endif()
 enable_testing()
 
 add_test(
-  NAME lint
-  COMMAND luacheck errors-scm-1.rockspec
+  NAME test_unit
+  COMMAND ${TARANTOOL} taptest.lua
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 add_test(
-  NAME test_unit
-  COMMAND ${TARANTOOL} ${CMAKE_CURRENT_SOURCE_DIR}/taptest.lua
+  NAME lint
+  COMMAND luacheck .
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 

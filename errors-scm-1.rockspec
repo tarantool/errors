@@ -17,11 +17,7 @@ dependencies = {
 
 build = {
     type = 'cmake',
-    build_target = 'all',
     variables = {
-        version = 'scm-1',
-        TARANTOOL_DIR = '$(TARANTOOL_DIR)',
-        TARANTOOL_INSTALL_LIBDIR = '$(LIBDIR)',
         TARANTOOL_INSTALL_LUADIR = '$(LUADIR)',
     },
     copy_directories = {'doc'},
