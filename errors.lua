@@ -123,6 +123,13 @@ local function pack(...)
     return select('#', ...), {...}
 end
 
+local function pcall_tail(status, ...)
+    if not status then
+        return nil, ...
+    end
+    return ...
+end
+
 --- Perform protected Lua call, gathering error as object.
 -- @tparam function fn called function
 -- @param[opt] ... call arguments
@@ -145,16 +152,7 @@ function error_class:pcall(fn, ...)
         end
     end
 
-    local n, ret = pack(xpcall(fn, collect, ...))
-    if not ret[1] then
-        -- fn did raise an error
-        -- xpcall return false, error_object
-        return nil, unpack(ret, 2, n)
-    else
-        -- fn did not raise
-        -- xpcall return true, ...
-        return unpack(ret, 2, n)
-    end
+    return pcall_tail(xpcall(fn, collect, ...))
 end
 
 --- Raise an error object unless condition is true.
