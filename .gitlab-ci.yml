@@ -11,6 +11,7 @@ stages:
   tags:
     - docker
   before_script:
+    - export PATH=$PATH:/.rocks/bin
     - yum -y install git-core cmake curl make
     - tarantoolctl rocks install luacheck
   variables:
