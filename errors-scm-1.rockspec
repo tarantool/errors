@@ -20,6 +20,5 @@ build = {
     variables = {
         TARANTOOL_INSTALL_LUADIR = '$(LUADIR)',
     },
-    copy_directories = {'doc'},
 }
 
