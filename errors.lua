@@ -142,17 +142,7 @@ function error_class:pcall(fn, ...)
         error('Use error_class:pcall() instead of error_class.pcall()', 2)
     end
 
-    local function collect(estr)
-        if estr == nil
-        or type(estr) == 'string'
-        or type(estr) == 'cdata' then
-            return self:new(2, tostring(estr))
-        else
-            return estr
-        end
-    end
-
-    return pcall_tail(xpcall(fn, collect, ...))
+    return pcall_tail(xpcall(fn, self.__collect_fn, ...))
 end
 
 --- Raise an error object unless condition is true.
@@ -263,6 +253,15 @@ local function new_class(class_name, options)
             },
         }
     }
+    self.__collect_fn = function(estr)
+        if estr == nil
+        or type(estr) == 'string'
+        or type(estr) == 'cdata' then
+            return self:new(2, tostring(estr))
+        else
+            return estr
+        end
+    end,
     setmetatable(self, error_class)
 
     _G._error_classes[class_name] = self
