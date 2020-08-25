@@ -261,7 +261,7 @@ local function new_class(class_name, options)
         else
             return estr
         end
-    end,
+    end
     setmetatable(self, error_class)
 
     _G._error_classes[class_name] = self

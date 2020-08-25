@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.1.4] - 2020-08-25
+
+### Fixed
+
+- Enhance `errors.pcall()` performance (\~30%) by eliminating
+  unnecessary closures creation and `unpack()` which breaks JIT traces.
+- Fix building scm-1 version from source.
+
 ## [2.1.3] - 2020-03-19
 
 ### Added
