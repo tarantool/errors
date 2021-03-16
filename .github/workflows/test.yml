@@ -1,0 +1,31 @@
+name: Test
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-20.04]
+        tarantool: ['1.10', '2.4', '2.5', '2.6', '2.7']
+    runs-on: ${{ matrix.runs-on }}
+    env:
+      CMAKE_LDOC_FIND_REQUIRED: 'YES'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: rosik/setup-tarantool@v1
+        with:
+          tarantool-version: ${{ matrix.tarantool }}
+
+      # Setup luacheck and ldoc
+      - run: tarantoolctl rocks install luacheck
+      - run: tarantoolctl rocks install ldoc
+          --server=https://tarantool.github.io/LDoc/
+      - run: echo ".rocks/bin" >> $GITHUB_PATH
+
+      - run: tarantoolctl rocks make
+      - run: tarantool taptest.lua
+      - run: luacheck .
