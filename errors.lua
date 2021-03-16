@@ -289,24 +289,31 @@ local function restore_mt(err)
     end
 end
 
-local function wrap_with_suffix(suffix_format, ...)
+local function string_format(fmt)
+    if type(fmt) == 'string' then
+        return fmt
+    else
+        return string.format(unpack(fmt))
+    end
+end
+
+local function _wrap(prefix_format, suffix_format, ...)
     local n, ret = pack(...)
     for i = 1, n do
         local obj = ret[i]
         if obj == box.NULL then
             ret[i] = nil
         elseif is_error_object(obj) then
+            if prefix_format ~= nil then
+                local error_prefix = string_format(prefix_format)
+                obj.err = error_prefix .. ': ' .. obj.err
+                obj.str = obj.class_name .. ': ' .. obj.err
+            end
+
             if restore_mt(obj) and obj.stack ~= nil then
-                local stack_suffix
-                local stack = string.strip(debug.traceback("", 2))
-
-                if type(suffix_format) == 'string' then
-                    stack_suffix = suffix_format
-                else
-                    stack_suffix = string.format(unpack(suffix_format))
-                end
-
-                obj.stack = obj.stack .. '\n' .. stack_suffix .. '\n' .. stack
+                local local_stack = string.strip(debug.traceback("", 2))
+                local stack_suffix = string_format(suffix_format)
+                obj.stack = obj.stack .. '\n' .. stack_suffix .. '\n' .. local_stack
             end
         end
     end
@@ -337,8 +344,9 @@ local function netbox_eval(conn, code, ...)
             ' (string expected, got ' .. type(code) .. ')', 2)
     end
 
-    return wrap_with_suffix(
-        {'during net.box eval on %s:%s', conn.host, conn.port},
+    return _wrap(
+        {'"%s:%s"', conn.host or "", conn.port},
+        {'during net.box eval on %s:%s', conn.host or "", conn.port},
         NetboxEvalError:pcall(conn.eval, conn, code, ...)
     )
 end
@@ -367,8 +375,9 @@ local function netbox_call(conn, func_name, ...)
             ' (string expected, got ' .. type(func_name) .. ')', 2)
     end
 
-    return wrap_with_suffix(
-        {'during net.box call to %s:%s, function %q', conn.host, conn.port, func_name},
+    return _wrap(
+        {'"%s:%s"', conn.host or "", conn.port},
+        {'during net.box call to %s:%s, function %q', conn.host or "", conn.port, func_name},
         NetboxCallError:pcall(conn.call, conn, func_name, ...)
     )
 end
@@ -394,7 +403,7 @@ end
 -- @param[opt] ...
 -- @return Postprocessed values
 local function wrap(...)
-    return wrap_with_suffix('during wrapped call', ...)
+    return _wrap(nil, 'during wrapped call', ...)
 end
 
 --- Functions (shortcuts).
