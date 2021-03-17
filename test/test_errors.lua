@@ -70,7 +70,7 @@ local function check_error(test, got, expected)
     test:is(tostring(got), got:tostring(), ':tostring')
 end
 
-test:plan(40)
+test:plan(42)
 
 --- e:new() -------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -316,7 +316,7 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, '=')
 test:test('netbox_eval(invalid_syntax)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = [[eval:1: unexpected symbol near '=']],
+        err = [["127.0.0.1:3301": eval:1: unexpected symbol near '=']],
         str = '^NetboxEvalError: .+\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
@@ -328,8 +328,8 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, 'error("Olive Brass")')
 test:test('netbox_eval("error(string)")', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = 'eval:1: Olive Brass',
-        str = '^NetboxEvalError: eval:1: Olive Brass\n' ..
+        err = '"127.0.0.1:3301": eval:1: Olive Brass',
+        str = '^NetboxEvalError: "127.0.0.1:3301": eval:1: Olive Brass\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -345,8 +345,8 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, [[
 test:test('netbox_eval("error(table)")', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = '{"metal":"mercury"}',
-        str = '^NetboxEvalError: {%"metal%":%"mercury%"}\n' ..
+        err = '"127.0.0.1:3301": {"metal":"mercury"}',
+        str = '^NetboxEvalError: "127.0.0.1:3301": {%"metal%":%"mercury%"}\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -358,8 +358,8 @@ test:test('netbox_eval("return e:new()")', check_error, err,
     {
         file = 'eval',
         line = 1,
-        err = 'Aqua Steel',
-        str = '^My error: Aqua Steel\n' ..
+        err = '"127.0.0.1:3301": Aqua Steel',
+        str = '^My error: "127.0.0.1:3301": Aqua Steel\n' ..
             'stack traceback:\n' ..
                 '\teval:1: in main chunk\n' ..
             '.+\n' ..
@@ -374,8 +374,8 @@ test:test('netbox_eval("return nil, e:new()")', check_error, err,
     {
         file = 'eval',
         line = 1,
-        err = 'White Zinc',
-        str = '^My error: White Zinc\n' ..
+        err = '"127.0.0.1:3301": White Zinc',
+        str = '^My error: "127.0.0.1:3301": White Zinc\n' ..
             'stack traceback:\n' ..
                 '\teval:1: in main chunk\n' ..
             '.+\n' ..
@@ -393,12 +393,27 @@ test:test('netbox_eval("return remote_fn()")', check_error, err,
     {
         file = current_file,
         line = _l1,
-        err = 'Fuschia Platinum',
-        str = '^My error: Fuschia Platinum\n' ..
+        err = '"127.0.0.1:3301": Fuschia Platinum',
+        str = '^My error: "127.0.0.1:3301": Fuschia Platinum\n' ..
             'stack traceback:\n' ..
                 string.format('\t%s:%d: ', current_file, _l1) ..
             '.+\n' ..
             'during net.box eval on 127.0.0.1:3301\n' ..
+            'stack traceback:\n'..
+                string.format('\t%s:%d: ', current_file, _l2)
+    }
+)
+local _l2, _, err = get_line(), errors.netbox_eval(netbox.connect(3301), 'return remote_fn()')
+test:test('netbox_eval(nohost, "return remote_fn()")', check_error, err,
+    {
+        file = current_file,
+        line = _l1,
+        err = '":3301": Fuschia Platinum',
+        str = '^My error: ":3301": Fuschia Platinum\n' ..
+            'stack traceback:\n' ..
+                string.format('\t%s:%d: ', current_file, _l1) ..
+            '.+\n' ..
+            'during net.box eval on :3301\n' ..
             'stack traceback:\n'..
                 string.format('\t%s:%d: ', current_file, _l2)
     }
@@ -417,8 +432,8 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, 'return true')
 test:test('netbox_eval(closed_connection)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = 'Connection closed',
-        str = '^NetboxEvalError: Connection closed\n' ..
+        err = '"127.0.0.1:3301": Connection closed',
+        str = '^NetboxEvalError: "127.0.0.1:3301": Connection closed\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -430,8 +445,8 @@ local _l, _, err = get_line(), errors.netbox_eval(conn, 'return true')
 test:test('netbox_eval(connection_refused)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = 'Connection refused',
-        str = '^NetboxEvalError: Connection refused\n' ..
+        err = '"127.0.0.1:9": Connection refused',
+        str = '^NetboxEvalError: "127.0.0.1:9": Connection refused\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -448,8 +463,8 @@ local _l, _, err = get_line(), errors.netbox_call(conn, 'fn_undefined')
 test:test('netbox_call(fn_undefined)', check_error, err,
     {
         file = 'builtin/box/net_box.lua',
-        err = [[Procedure 'fn_undefined' is not defined]],
-        str = '^NetboxCallError: .+\n' ..
+        err = [["127.0.0.1:3301": Procedure 'fn_undefined' is not defined]],
+        str = '^NetboxCallError: "127.0.0.1:3301": Procedure \'fn_undefined\' is not defined\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
                 string.format('\t%s:%d: in main chunk$', current_file, _l)
@@ -463,12 +478,27 @@ test:test('netbox_call(return nil, e:new(string))', check_error, err,
     {
         file = current_file,
         line = _l1,
-        err = 'Yellow Iron',
-        str = '^My error: Yellow Iron\n' ..
+        err = '"127.0.0.1:3301": Yellow Iron',
+        str = '^My error: "127.0.0.1:3301": Yellow Iron\n' ..
             'stack traceback:\n' ..
                 string.format('\t%s:%d: ', current_file, _l1) ..
             '.+\n' ..
             'during net.box call to 127.0.0.1:3301, function "remote_fn"\n' ..
+            'stack traceback:\n'..
+                string.format('\t%s:%d: ', current_file, _l2)
+    }
+)
+local _l2, _, err = get_line(), errors.netbox_call(netbox.connect(3301), 'remote_fn')
+test:test('netbox_call(nohost, return nil, e:new(string))', check_error, err,
+    {
+        file = current_file,
+        line = _l1,
+        err = '":3301": Yellow Iron',
+        str = '^My error: ":3301": Yellow Iron\n' ..
+            'stack traceback:\n' ..
+                string.format('\t%s:%d: ', current_file, _l1) ..
+            '.+\n' ..
+            'during net.box call to :3301, function "remote_fn"\n' ..
             'stack traceback:\n'..
                 string.format('\t%s:%d: ', current_file, _l2)
     }
