@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.1.5] - 2021-03-18
+
+### Fixed
+
+- Enhance error messages of `errors.netbox_call/eval` - supply it with
+  the connection URI.
+
 ## [2.1.4] - 2020-08-25
 
 ### Fixed
