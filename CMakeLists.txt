@@ -29,7 +29,7 @@ add_custom_command(
   VERBATIM
 )
 
-if(LDOC_FOUND)
+if(Ldoc_FOUND)
   add_custom_target(doc ALL
     DEPENDS DOC_OUTPUT)
 else()
