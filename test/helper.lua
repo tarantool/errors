@@ -1,5 +1,11 @@
+local fiber = require('fiber')
+
 local function get_line()
     return debug.getinfo(2, 'l').currentline
+end
+
+local function fiber_csw()
+    return fiber.info()[fiber.id()].csw
 end
 
 local function check_error(got, expected, subtest_name)
@@ -39,4 +45,5 @@ end
 return {
     check_error = check_error,
     get_line = get_line,
+    fiber_csw = fiber_csw
 }
