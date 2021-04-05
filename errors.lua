@@ -382,6 +382,81 @@ local function netbox_call(conn, func_name, ...)
     )
 end
 
+
+local function _wrap_future_result(prefix, suffix, ...)
+    local args = {...}
+    local res, err = args[1], args[2]
+    if res ~= nil then
+        return res
+    end
+
+    if not is_error_object(err) then
+        err = NetboxCallError:new(err)
+    end
+
+    return _wrap(prefix, suffix, nil, err)
+end
+
+--- Perform protected wait of async net.box call.
+-- Similar to `netbox_call`,
+-- execute code on remote server using Tarantool built-in [`net.box` `conn:call` `is_async = true`](
+-- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-call).
+-- Additionally postprocess returned values with `wrap`.
+-- @see netbox_call
+-- @function netbox_wait_async_call
+-- @param future net.box future object
+-- @tparam number timeout
+-- @tparam ?string call_uri - async call uri (to increase error verbosity)
+-- @tparam ?string call_func_name - async call function name (to increase error verbosity)
+-- @return[1] Postprocessed `future:wait_result()` result
+-- @treturn[2] nil
+-- @treturn[2] error_object Error description
+local function netbox_wait_async_call(future, timeout, call_uri, call_func_name)
+    if type(future) ~= 'table' then
+        error('Bad argument #1 to errors.netbox_wait_async_call' ..
+            ' (net.box future expected, got ' .. type(future) .. ')', 2)
+    elseif type(timeout) ~= 'number' or timeout < 0 then
+        error('Bad argument #2 to errors.netbox_wait_async_call' ..
+            ' (number expected, got ' .. type(timeout) .. ')', 2)
+    elseif call_uri and type(call_uri) ~= 'string' then
+        error('Bad argument #3 to errors.netbox_wait_async_call' ..
+            ' (?string expected, got ' .. type(call_uri) .. ')', 2)
+    elseif call_func_name and type(call_func_name) ~= 'string' then
+        error('Bad argument #4 to errors.netbox_wait_async_call' ..
+        ' (?string expected, got ' .. type(call_func_name) .. ')', 2)
+    end
+
+    local prefix = ''
+    local suffix = 'during async net.box call'
+    if call_uri then
+        prefix = ('%q'):format(call_uri)
+        suffix = suffix .. (' to %s'):format(call_uri)
+    end
+    if call_func_name then
+        suffix = suffix .. (' %q'):format(call_func_name)
+    end
+
+    -- wait_result behaviour:
+    -- - may raise an error (if timeout ~= number or timeout < 0)
+    -- - return nil, err as string:
+    --     - if there is no result with fixed timeout (Timeout exceeded)
+    --     - peer closed
+    --     - error was raised in remote function
+    -- - return res as array:
+    --     - res[1] - result or nil
+    --     - res[2] - error or nil (error maybe as object or string)
+    -- (wait_result(0) won't yeild)
+    local res, err = _wrap_future_result(prefix, suffix,
+        NetboxCallError:pcall(future.wait_result, future, timeout)
+    )
+    if res == nil then
+        return nil, err
+    end
+
+    return _wrap_future_result(prefix, suffix, res[1], res[2])
+end
+
+
 local function list()
     local res = {}
 
@@ -452,6 +527,7 @@ return {
     new_class = new_class,
     netbox_call = netbox_call,
     netbox_eval = netbox_eval,
+    netbox_wait_async_call = netbox_wait_async_call,
     wrap = wrap,
 
     new = errors_new,
