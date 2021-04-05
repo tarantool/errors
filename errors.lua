@@ -415,6 +415,9 @@ local function netbox_wait_async_call(future, timeout, call_uri, call_func_name)
     if type(future) ~= 'table' then
         error('Bad argument #1 to errors.netbox_wait_async_call' ..
             ' (net.box future expected, got ' .. type(future) .. ')', 2)
+        if future.method == 'eval' then
+            error("errors.netbox_wait_async_call doesn't support eval")
+        end
     elseif type(timeout) ~= 'number' or timeout < 0 then
         error('Bad argument #2 to errors.netbox_wait_async_call' ..
             ' (number expected, got ' .. type(timeout) .. ')', 2)
