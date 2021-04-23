@@ -383,62 +383,67 @@ local function netbox_call(conn, func_name, ...)
 end
 
 
-local function _wrap_future_result(prefix, suffix, res, err)
+local function _wrap_future_result(err_class, prefix, suffix, res, err)
     if err == nil then
         return res
     end
 
     if not is_error_object(err) then
-        err = NetboxCallError:new(err)
+        err = err_class:new(err)
     end
 
     return _wrap(prefix, suffix, nil, err)
 end
 
---- Perform protected wait of async net.box call.
--- Note: function passed to net.box call must not return multiple values.
+--- Perform protected wait of async net.box call/eval.
+-- Note: function passed to net.box call/eval must not return multiple values.
 -- It should return only tuple res, error (also raising an error is acceptable)
 -- Similar to `netbox_call`,
 -- execute code on remote server using Tarantool built-in [`net.box` `conn:call` `is_async = true`](
 -- https://tarantool.io/en/doc/latest/reference/reference_lua/net_box/#net-box-call).
 -- Additionally postprocess returned values with `wrap`.
 -- @see netbox_call
--- @function netbox_wait_async_call
+-- @function netbox_wait_async
 -- @param future net.box future object
 -- @tparam number timeout
 -- @tparam ?string call_uri - async call uri (to increase error verbosity)
--- @tparam ?string call_func_name - async call function name (to increase error verbosity)
+-- @tparam ?string activity_name - name of operation (for ex. function name in case of call)
+--   To increase error verbosity
 -- @return[1] Postprocessed `future:wait_result()` result
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
-local function netbox_wait_async_call(future, timeout, call_uri, call_func_name)
+local function netbox_wait_async(future, timeout, call_uri, activity_name)
     if type(future) ~= 'table' then
-        error('Bad argument #1 to errors.netbox_wait_async_call' ..
+        error('Bad argument #1 to errors.netbox_wait_async' ..
             ' (net.box future expected, got ' .. type(future) .. ')', 2)
     elseif type(timeout) ~= 'number' then
-        error('Bad argument #2 to errors.netbox_wait_async_call' ..
+        error('Bad argument #2 to errors.netbox_wait_async' ..
             ' (number expected, got ' .. type(timeout) .. ')', 2)
     elseif call_uri and type(call_uri) ~= 'string' then
-        error('Bad argument #3 to errors.netbox_wait_async_call' ..
+        error('Bad argument #3 to errors.netbox_wait_async' ..
             ' (?string expected, got ' .. type(call_uri) .. ')', 2)
     elseif call_func_name and type(call_func_name) ~= 'string' then
-        error('Bad argument #4 to errors.netbox_wait_async_call' ..
+        error('Bad argument #4 to errors.netbox_wait_async' ..
         ' (?string expected, got ' .. type(call_func_name) .. ')', 2)
     end
 
+    local suffix = 'during async net.box call'
+    local err_class = NetboxCallError
     if future.method == 'eval' then
-        error("errors.netbox_wait_async_call doesn't support eval", 2)
+        call_func_name = nil
+        err_class = NetboxEvalError
+        suffix = 'during async net.box eval'
     end
 
     local prefix = ''
-    local suffix = 'during async net.box call'
     if call_uri then
         prefix = ('%q'):format(call_uri)
         suffix = suffix .. (' to %s'):format(call_uri)
     end
-    if call_func_name then
-        suffix = suffix .. (' %q'):format(call_func_name)
+    if activity_name then
+        suffix = suffix .. (' %q'):format(activity_name)
     end
+
 
     -- wait_result behaviour:
     -- - may raise an error (if timeout ~= number or timeout < 0)
@@ -450,14 +455,14 @@ local function netbox_wait_async_call(future, timeout, call_uri, call_func_name)
     --     - res[1] - result or nil
     --     - res[2] - error or nil (error maybe as object or string)
     -- (wait_result(0) won't yeild)
-    local res, err = _wrap_future_result(prefix, suffix,
-        NetboxCallError:pcall(future.wait_result, future, timeout)
+    local res, err = _wrap_future_result(err_class, prefix, suffix,
+        err_class:pcall(future.wait_result, future, timeout)
     )
     if res == nil then
         return nil, err
     end
 
-    return _wrap_future_result(prefix, suffix, res[1], res[2])
+    return _wrap_future_result(err_class, prefix, suffix, res[1], res[2])
 end
 
 
@@ -531,7 +536,7 @@ return {
     new_class = new_class,
     netbox_call = netbox_call,
     netbox_eval = netbox_eval,
-    netbox_wait_async_call = netbox_wait_async_call,
+    netbox_wait_async = netbox_wait_async,
     wrap = wrap,
 
     new = errors_new,
