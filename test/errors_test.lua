@@ -286,7 +286,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: .+\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-                string.format('\t%s:%d: in main chunk$', current_file, _l)
+            ('\t%s:%d:'):format(current_file, _l) .. '.*in main chunk$'
     }, 'netbox_eval(invalid_syntax)')
 
     local _l, _, err = get_line(), errors.netbox_eval(g.conn, 'error("Olive Brass")')
@@ -296,7 +296,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: "127.0.0.1:3301": eval:1: Olive Brass\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-                string.format('\t%s:%d: in main chunk$', current_file, _l)
+            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
     }, 'netbox_eval("error(string)")')
 
     local _l, _, err = get_line(), errors.netbox_eval(g.conn, [[
@@ -311,7 +311,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: "127.0.0.1:3301": {%"metal%":%"mercury%"}\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-                string.format('\t%s:%d: in main chunk$', current_file, _l)
+            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
     }, 'netbox_eval("error(table)")')
 
     local _l, err = get_line(), errors.netbox_eval(g.conn, 'local err = my_error:new("Aqua Steel") return err')
@@ -388,7 +388,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: "127.0.0.1:3301": Connection closed\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-                string.format('\t%s:%d: in main chunk$', current_file, _l)
+            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
     }, 'netbox_eval(closed_connection)')
 
     local conn = netbox.connect('127.0.0.1:9')
@@ -399,7 +399,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: "127.0.0.1:9": Connection refused\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-                string.format('\t%s:%d: in main chunk$', current_file, _l)
+            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
     }, 'netbox_eval(connection_refused)')
 end
 
@@ -414,7 +414,7 @@ function g.test_errors_netbox_call()
         str = '^NetboxCallError: "127.0.0.1:3301": Procedure \'fn_undefined\' is not defined\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-                string.format('\t%s:%d: in main chunk$', current_file, _l)
+            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
     }, 'netbox_call(fn_undefined)')
 
     local _l1, remote_fn = get_line(), function() return nil, my_error:new('Yellow Iron') end
