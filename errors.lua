@@ -422,15 +422,14 @@ local function netbox_wait_async(future, timeout, call_uri, activity_name)
     elseif call_uri and type(call_uri) ~= 'string' then
         error('Bad argument #3 to errors.netbox_wait_async' ..
             ' (?string expected, got ' .. type(call_uri) .. ')', 2)
-    elseif call_func_name and type(call_func_name) ~= 'string' then
+    elseif activity_name and type(activity_name) ~= 'string' then
         error('Bad argument #4 to errors.netbox_wait_async' ..
-        ' (?string expected, got ' .. type(call_func_name) .. ')', 2)
+        ' (?string expected, got ' .. type(activity_name) .. ')', 2)
     end
 
     local suffix = 'during async net.box call'
     local err_class = NetboxCallError
     if future.method == 'eval' then
-        call_func_name = nil
         err_class = NetboxEvalError
         suffix = 'during async net.box eval'
     end
