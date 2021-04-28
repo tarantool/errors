@@ -20,12 +20,13 @@ jobs:
         with:
           tarantool-version: ${{ matrix.tarantool }}
 
-      # Setup luacheck and ldoc
+      # Setup luacheck, ldoc and luatest
       - run: tarantoolctl rocks install luacheck
       - run: tarantoolctl rocks install ldoc
           --server=https://tarantool.github.io/LDoc/
+      - run: tarantoolctl rocks install luatest 0.5.2
       - run: echo ".rocks/bin" >> $GITHUB_PATH
 
       - run: tarantoolctl rocks make
-      - run: tarantool taptest.lua
+      - run: .rocks/bin/luatest -v
       - run: luacheck .
