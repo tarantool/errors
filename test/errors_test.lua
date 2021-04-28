@@ -80,9 +80,6 @@ local function check_error(got, expected, subtest_name)
     end
 end
 
---- e:new() -------------------------------------------------------------------
--------------------------------------------------------------------------------
-
 function g.test_error_new()
     local _l, err = get_line(), my_error:new()
     check_error(err, {
@@ -152,8 +149,6 @@ function g.test_error_new()
     }, 'return e:new(e:new())')
 end
 
---- e:pcall() -----------------------------------------------------------------
--------------------------------------------------------------------------------
 function g.test_error_pcall()
     local _, err = my_error:pcall(error, nil)
     check_error(err, {
@@ -212,8 +207,6 @@ function g.test_error_pcall()
     )
     t.assert_equals(type(ret[4]), 'nil', '[4] == nil')
 end
---- e:assert() ----------------------------------------------------------------
--------------------------------------------------------------------------------
 
 function g.test_error_assert()
     local _l, fn = get_line(), function() my_error:assert() end
@@ -274,9 +267,6 @@ function g.test_error_assert()
     )
     t.assert_equals(type(ret[3]), 'nil', '[3] == nil')
 end
-
--- --- errors.netbox_eval() ------------------------------------------------------
--- -------------------------------------------------------------------------------
 
 function g.test_errors_netbox_eval()
     local _l, _, err = get_line(), errors.netbox_eval(g.conn, '=')
@@ -339,7 +329,6 @@ function g.test_errors_netbox_eval()
             '.+\n' ..
             'during net.box eval on 127.0.0.1:3301\n' ..
             'stack traceback:\n'..
-                -- string.format('\t%s:%d: in main chunk$', current_file, _l)
                 string.format('\t%s:%d: ', current_file, _l)
     }, 'netbox_eval("return nil, e:new()")')
 
@@ -403,9 +392,6 @@ function g.test_errors_netbox_eval()
     }, 'netbox_eval(connection_refused)')
 end
 
--- --- errors.netbox_call() ------------------------------------------------------
--- -------------------------------------------------------------------------------
-
 function g.test_errors_netbox_call()
     local _l, _, err = get_line(), errors.netbox_call(g.conn, 'fn_undefined')
     check_error(err, {
@@ -456,9 +442,6 @@ function g.test_errors_netbox_call()
     t.assert_equals(type(ret[4]), 'nil', '[4] == nil')
 end
 
--- --- errors.wrap() -------------------------------------------------------------
--- -------------------------------------------------------------------------------
-
 function g.test_errros_wrap()
     local tbl = {}
     local _l, err = get_line(), errors.wrap(my_error:new())
@@ -488,7 +471,6 @@ function g.test_errros_wrap()
             '.+\n' ..
             'during wrapped call\n' ..
             'stack traceback:\n'..
-                -- string.format('\t%s:%d: in main chunk$', current_file, _l)
                 string.format('\t%s:%d: ', current_file, _l)
     }, 'wrap conn:eval("return nil, e:new()")')
 
@@ -531,8 +513,6 @@ function g.test_errros_wrap()
     t.assert_equals(type(ret[2]), 'nil', '[2] == nil')
     t.assert_equals(type(ret[4]), 'nil', '[4] == nil')
 end
--- --- shortcuts -----------------------------------------------------------------
--- -------------------------------------------------------------------------------
 
 function g.test_shortcuts()
     local _l, err = get_line(), errors.new('ErrorNew', 'Grey Zinc')
@@ -568,8 +548,6 @@ function g.test_shortcuts()
                 string.format('\t%s:%d: ', current_file, _l)
     }, 'errors.assert(class_name, false, message)')
 end
--- --- is_error_object() -------------------------------------------------------------
--- -------------------------------------------------------------------------------
 
 function g.test_is_error_object()
     local err = errors.new('error')
