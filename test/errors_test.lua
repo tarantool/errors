@@ -107,7 +107,7 @@ function g.test_error_new()
         err = '',
         str = '^My error: \n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l)
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'return e:new(level)')
 
     local _l, err = get_line(), my_error:new('Green %s %X', 'Bronze', 175)
@@ -276,7 +276,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: .+\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-            ('\t%s:%d:'):format(current_file, _l) .. '.*in main chunk$'
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_eval(invalid_syntax)')
 
     local _l, _, err = get_line(), errors.netbox_eval(g.conn, 'error("Olive Brass")')
@@ -286,7 +286,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: "127.0.0.1:3301": eval:1: Olive Brass\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_eval("error(string)")')
 
     local _l, _, err = get_line(), errors.netbox_eval(g.conn, [[
@@ -301,7 +301,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: "127.0.0.1:3301": {%"metal%":%"mercury%"}\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_eval("error(table)")')
 
     local _l, err = get_line(), errors.netbox_eval(g.conn, 'local err = my_error:new("Aqua Steel") return err')
@@ -315,7 +315,7 @@ function g.test_errors_netbox_eval()
             '.+\n' ..
             'during net.box eval on 127.0.0.1:3301\n' ..
             'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l)
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_eval("return e:new()")')
 
     local _l, _, err = get_line(), errors.netbox_eval(g.conn, 'return nil, my_error:new("White Zinc")')
@@ -329,7 +329,7 @@ function g.test_errors_netbox_eval()
             '.+\n' ..
             'during net.box eval on 127.0.0.1:3301\n' ..
             'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l)
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_eval("return nil, e:new()")')
 
 
@@ -343,11 +343,11 @@ function g.test_errors_netbox_eval()
         err = '"127.0.0.1:3301": Fuschia Platinum',
         str = '^My error: "127.0.0.1:3301": Fuschia Platinum\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l1) ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
             '.+\n' ..
             'during net.box eval on 127.0.0.1:3301\n' ..
-            'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l2)
+            'stack traceback:\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l2)
     }, 'netbox_eval("return remote_fn()")')
 
     local _l2, _, err = get_line(), errors.netbox_eval(netbox.connect(3301), 'return remote_fn()')
@@ -357,11 +357,11 @@ function g.test_errors_netbox_eval()
         err = '":3301": Fuschia Platinum',
         str = '^My error: ":3301": Fuschia Platinum\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l1) ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
             '.+\n' ..
             'during net.box eval on :3301\n' ..
             'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l2)
+            ('\t%s:%d: .*$'):format(current_file, _l2)
     }, 'netbox_eval(nohost, "return remote_fn()")')
 
     local ret = {errors.netbox_eval(g.conn, 'return ...', {true, "2", 3})}
@@ -377,7 +377,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: "127.0.0.1:3301": Connection closed\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_eval(closed_connection)')
 
     local conn = netbox.connect('127.0.0.1:9')
@@ -388,7 +388,7 @@ function g.test_errors_netbox_eval()
         str = '^NetboxEvalError: "127.0.0.1:9": Connection refused\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_eval(connection_refused)')
 end
 
@@ -400,7 +400,7 @@ function g.test_errors_netbox_call()
         str = '^NetboxCallError: "127.0.0.1:3301": Procedure \'fn_undefined\' is not defined\n' ..
             'stack traceback:\n' ..
             '.+\n' ..
-            ('\t%s:%d:.*'):format(current_file, _l) .. '.*in main chunk$'
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_call(fn_undefined)')
 
     local _l1, remote_fn = get_line(), function() return nil, my_error:new('Yellow Iron') end
@@ -413,11 +413,11 @@ function g.test_errors_netbox_call()
         err = '"127.0.0.1:3301": Yellow Iron',
         str = '^My error: "127.0.0.1:3301": Yellow Iron\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l1) ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
             '.+\n' ..
             'during net.box call to 127.0.0.1:3301, function "remote_fn"\n' ..
             'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l2)
+            ('\t%s:%d: .*$'):format(current_file, _l2)
     }, 'netbox_call(return nil, e:new(string))')
 
     local _l2, _, err = get_line(), errors.netbox_call(netbox.connect(3301), 'remote_fn')
@@ -427,11 +427,11 @@ function g.test_errors_netbox_call()
         err = '":3301": Yellow Iron',
         str = '^My error: ":3301": Yellow Iron\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l1) ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
             '.+\n' ..
             'during net.box call to :3301, function "remote_fn"\n' ..
             'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l2)
+            ('\t%s:%d: .*$'):format(current_file, _l2)
     }, 'netbox_call(nohost, return nil, e:new(string))')
 
     local ret = {errors.netbox_call(g.conn, 'remote_4args_fn', fn_4args)}
@@ -471,7 +471,7 @@ function g.test_errros_wrap()
             '.+\n' ..
             'during wrapped call\n' ..
             'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l)
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'wrap conn:eval("return nil, e:new()")')
 
     local _l1, remote_fn = get_line(), function() return nil, my_error:new('Fuschia Platinum') end
@@ -484,11 +484,11 @@ function g.test_errros_wrap()
         err = 'Fuschia Platinum',
         str = '^My error: Fuschia Platinum\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l1) ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
             '.+\n' ..
             'during wrapped call\n' ..
             'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l2)
+            ('\t%s:%d: .*$'):format(current_file, _l2)
     }, 'wrap conn:eval("return remote_fn()")')
 
     local _l1, remote_fn = get_line(), function() return nil, my_error:new('Yellow Iron') end
@@ -501,11 +501,11 @@ function g.test_errros_wrap()
         err = 'Yellow Iron',
         str = '^My error: Yellow Iron\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l1) ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
             '.+\n' ..
             'during wrapped call\n' ..
             'stack traceback:\n'..
-                string.format('\t%s:%d: ', current_file, _l2)
+            ('\t%s:%d: .*$'):format(current_file, _l2)
     }, 'warp conn:call(return nil, e:new(string))')
 
     local ret = {errors.wrap(g.conn:call('remote_4args_fn', fn_4args))}
@@ -522,7 +522,7 @@ function g.test_shortcuts()
         err = 'Grey Zinc',
         str = '^ErrorNew: Grey Zinc\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l)
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'return errors.new(class_name, message)')
 
     local _l, fn = get_line(), function() error('Teal Brass') end
@@ -534,7 +534,7 @@ function g.test_shortcuts()
         err = etxt,
         str = '^ErrorPCall: ' .. etxt .. '\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l)
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'errors.pcall(error, message)')
 
     local _l, fn = get_line(), function() errors.assert('ErrorAssert', false, 'Maroon Silver') end
@@ -545,7 +545,7 @@ function g.test_shortcuts()
         err = 'Maroon Silver',
         str = '^ErrorAssert: Maroon Silver\n' ..
             'stack traceback:\n' ..
-                string.format('\t%s:%d: ', current_file, _l)
+            ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'errors.assert(class_name, false, message)')
 end
 
