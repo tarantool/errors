@@ -1,4 +1,5 @@
 local fio = require('fio')
+local fiber = require('fiber')
 local errors = require('errors')
 local netbox = require('net.box')
 
@@ -214,6 +215,150 @@ function g.test_errors_netbox_call()
     )
     t.assert_equals(type(ret[2]), 'nil', '[2] == nil')
     t.assert_equals(type(ret[4]), 'nil', '[4] == nil')
+end
+
+function g.test_errors_netbox_wait_async()
+    -- future returns error
+    local long_call = function() fiber.sleep(10) return 5 end
+    _G.long_call = long_call
+
+    local csw1 = h.fiber_csw()
+
+    local future_call = errors.netbox_call(g.conn, '_G.long_call', nil, {is_async = true})
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future_call, 0)
+    h.check_error(err, {
+        file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
+        err = '"127.0.0.1:3301": Timeout exceeded',
+        str = '^NetboxCallError: "127.0.0.1:3301": Timeout exceeded\n' ..
+            'stack traceback:\n' ..
+            '.+\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l)
+    }, 'netbox_wait_async (call request timed out)')
+
+    local future_eval = errors.netbox_eval(g.conn, 'fiber.sleep(10) return 5', nil, {is_async = true})
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future_eval, 0)
+    h.check_error(err, {
+        file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
+        err = '"127.0.0.1:3301": Timeout exceeded',
+        str = '^NetboxEvalError: "127.0.0.1:3301": Timeout exceeded\n' ..
+            'stack traceback:\n' ..
+            '.+\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l)
+    }, 'netbox_wait_async (eval request timed out)')
+
+    local csw2 = h.fiber_csw()
+    t.assert_equals(csw1, csw2, 'Unnecessary yield')
+
+    g.conn:close()
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future_call, 5)
+    h.check_error(err, {
+        file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
+        err = '"127.0.0.1:3301": Connection closed',
+        str = '^NetboxCallError: "127.0.0.1:3301": Connection closed\n' ..
+            'stack traceback:\n' ..
+            '.+\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l)
+    }, 'netbox_wait_async (call connection closed)')
+
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future_eval, 5)
+    h.check_error(err, {
+        file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
+        err = '"127.0.0.1:3301": Connection closed',
+        str = '^NetboxEvalError: "127.0.0.1:3301": Connection closed\n' ..
+            'stack traceback:\n' ..
+            '.+\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l)
+    }, 'netbox_wait_async (eval connection closed)')
+
+
+    g.conn = netbox.connect('127.0.0.1:3301')
+    g.conn:wait_connected()
+
+    local future = errors.netbox_call(g.conn, '_G.fn_undefined', nil, {is_async = true})
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
+    h.check_error(err, {
+        file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
+        err = [["127.0.0.1:3301": Procedure '_G.fn_undefined' is not defined]],
+        str = '^NetboxCallError: "127.0.0.1:3301": Procedure \'_G.fn_undefined\' is not defined\n' ..
+            'stack traceback:\n' ..
+            '.+\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l)
+    }, 'netbox_wait_async (call not defined function)')
+
+
+    -- test netbox_wait_async (remote raises)
+    local remote_fn = function() error('New error', 0) end
+    _G.remote_fn = remote_fn
+
+    local future = errors.netbox_call(g.conn, '_G.remote_fn', nil, {is_async = true})
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
+    h.check_error(err, {
+        file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
+        err = '"127.0.0.1:3301": New error',
+        str = '^NetboxCallError: "127.0.0.1:3301": New error\n' ..
+            'stack traceback:\n' ..
+            '.+\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l)
+    }, 'netbox_wait_async (call remote fn raises)')
+
+    local future = errors.netbox_eval(g.conn, 'return _G.remote_fn()', nil, {is_async = true})
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
+    h.check_error(err, {
+        file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
+        err = '"127.0.0.1:3301": New error',
+        str = '^NetboxEvalError: "127.0.0.1:3301": New error\n' ..
+            'stack traceback:\n' ..
+            '.+\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l)
+    }, 'netbox_wait_async (eval raises)')
+
+    -- test netbox_wait_async (remote returns nil, error object)
+    local _l1, remote_fn = h.get_line(), function() return nil, my_error:new('Error obj') end
+    _G.remote_fn = remote_fn
+
+    local future = errors.netbox_call(g.conn, '_G.remote_fn', nil, {is_async = true})
+    local _l2, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
+    h.check_error(err, {
+        file = current_file,
+        line = _l1,
+        err = '"127.0.0.1:3301": Error obj',
+        str = '^My error: "127.0.0.1:3301": Error obj\n' ..
+            'stack traceback:\n' ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
+            '.+\n' ..
+            'during async net.box call to 127.0.0.1:3301, function "_G.remote_fn"\n' ..
+            'stack traceback:\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l2)
+    }, 'netbox_wait_async (call remote fn returns nil, error_obj)')
+
+    local future = errors.netbox_eval(g.conn, 'return _G.remote_fn()', nil, {is_async = true})
+    local _l2, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
+
+    h.check_error(err, {
+        file = current_file,
+        line = _l1,
+        err = '"127.0.0.1:3301": Error obj',
+        str = '^My error: "127.0.0.1:3301": Error obj\n' ..
+            'stack traceback:\n' ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
+            '.+\n' ..
+            'during async net.box eval on 127.0.0.1:3301\n' ..
+            'stack traceback:\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l2)
+    }, 'netbox_wait_async (call remote fn returns nil, error_obj)')
+
+    -- test netbox_wait_async (correct multireturn)
+    local future = errors.netbox_call(g.conn, 'remote_4args_fn', fn_4args, {is_async = true})
+    local ret = {errors.netbox_wait_async(future, 10)}
+    t.assert_equals(ret, {'1', nil, false, nil},
+        'netbox_wait_async (call return {"1", box.NULL, false, nil})'
+    )
+
+    local future = errors.netbox_eval(g.conn, 'return remote_4args_fn(...)', fn_4args, {is_async = true})
+    local ret = {errors.netbox_wait_async(future, 10)}
+    t.assert_equals(ret, {'1', nil, false, nil},
+        'netbox_wait_async (eval return {"1", box.NULL, false, nil})'
+    )
 end
 
 function g.test_errors_wrap_remote()

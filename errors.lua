@@ -335,7 +335,7 @@ local NetboxEvalError = new_class('NetboxEvalError')
 -- @return[1] Postprocessed `conn:eval()` result
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
-local function netbox_eval(conn, code, ...)
+local function netbox_eval(conn, code, args, opts)
     if type(conn) ~= 'table' then
         error('Bad argument #1 to errors.netbox_eval' ..
             ' (net.box connection expected, got ' .. type(conn) .. ')', 2)
@@ -344,10 +344,20 @@ local function netbox_eval(conn, code, ...)
             ' (string expected, got ' .. type(code) .. ')', 2)
     end
 
+    if opts and opts.is_async then
+        local future, err = NetboxEvalError:pcall(conn.eval, conn, code, args, opts)
+        if future == nil then
+            return nil, err
+        end
+
+        future.conn = conn
+        return future
+    end
+
     return _wrap(
         {'"%s:%s"', conn.host or "", conn.port},
         {'during net.box eval on %s:%s', conn.host or "", conn.port},
-        NetboxEvalError:pcall(conn.eval, conn, code, ...)
+        NetboxEvalError:pcall(conn.eval, conn, code, args, opts)
     )
 end
 
@@ -366,7 +376,7 @@ local NetboxCallError = new_class('NetboxCallError')
 -- @return[1] Postprocessed `conn:call()` result
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
-local function netbox_call(conn, func_name, ...)
+local function netbox_call(conn, func_name, args, opts)
     if type(conn) ~= 'table' then
         error('Bad argument #1 to errors.netbox_call' ..
             ' (net.box connection expected, got ' .. type(conn) .. ')', 2)
@@ -375,12 +385,93 @@ local function netbox_call(conn, func_name, ...)
             ' (string expected, got ' .. type(func_name) .. ')', 2)
     end
 
+    if opts and opts.is_async then
+        local future, err = NetboxCallError:pcall(conn.call, conn, func_name, args, opts)
+        if future == nil then
+            return nil, err
+        end
+
+        future.conn = conn
+        future.func_name = func_name
+        return future
+    end
+
     return _wrap(
         {'"%s:%s"', conn.host or "", conn.port},
         {'during net.box call to %s:%s, function %q', conn.host or "", conn.port, func_name},
-        NetboxCallError:pcall(conn.call, conn, func_name, ...)
+        NetboxCallError:pcall(conn.call, conn, func_name, args, opts)
     )
 end
+
+--- Wait for result from async net.box call / eval.
+--
+-- Additionally postprocess returned values with `wrap`.
+-- @see netbox_call, netbox_eval
+-- @function netbox_wait_async
+-- @param future net.box future object
+-- @tparam number timeout
+-- @return[1] Postprocessed `future:wait_result()` result
+-- @treturn[2] nil
+-- @treturn[2] error_object Error description
+local function netbox_wait_async(future, timeout)
+    if type(future) ~= 'table' then
+        error('Bad argument #1 to errors.netbox_wait_async' ..
+            ' (net.box future expected, got ' .. type(future) .. ')', 2)
+    elseif type(timeout) ~= 'number' then
+        error('Bad argument #2 to errors.netbox_wait_async' ..
+            ' (number expected, got ' .. type(timeout) .. ')', 2)
+    elseif not (timeout >= 0) then
+        error('Bad argument #2 to errors.netbox_wait_async' ..
+            ' (timeout must be positive)', 2)
+    end
+
+    local err_class, prefix_format, suffix_format
+    if future.method == 'eval' then
+        err_class = NetboxEvalError
+
+        local conn = future.conn
+        if conn ~= nil then
+            prefix_format = {'"%s:%s"', conn.host or "", conn.port}
+            suffix_format = {'during async net.box eval on %s:%s',
+                conn.host or "", conn.port
+            }
+        else
+            suffix_format = {'during async net.box eval'}
+        end
+    else
+        err_class = NetboxCallError
+
+        local conn = future.conn
+        if conn ~= nil then
+            prefix_format = {'"%s:%s"', conn.host or "", conn.port}
+            suffix_format = {'during async net.box call to %s:%s, function %q',
+                conn.host or "", conn.port,
+                future.func_name or "???"
+            }
+        else
+            suffix_format = {'during async net.box call'}
+        end
+    end
+
+    -- wait_result behaviour:
+    -- - may raise an error (if timeout ~= number or timeout < 0)
+    -- - return nil, err as string:
+    --     - if there is no result with fixed timeout (Timeout exceeded)
+    --     - peer closed
+    --     - error was raised in remote function
+    -- - return res (multi return)
+    -- (wait_result(0) won't yeild)
+    local ret, err = err_class:pcall(future.wait_result, future, timeout)
+    if ret == nil then
+        return _wrap(prefix_format, suffix_format, nil, err_class:new(err))
+    else
+        return _wrap(
+            prefix_format, suffix_format,
+            unpack(ret)
+        )
+    end
+end
+
 
 local function list()
     local res = {}
@@ -452,6 +543,7 @@ return {
     new_class = new_class,
     netbox_call = netbox_call,
     netbox_eval = netbox_eval,
+    netbox_wait_async = netbox_wait_async,
     wrap = wrap,
 
     new = errors_new,
