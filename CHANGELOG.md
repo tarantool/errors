@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.2.0] - 2021-05-20
+
 ### Added
 
 - New method `errors.netbox_wait_async` - to wait `netbox.fututre`
