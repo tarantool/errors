@@ -336,10 +336,7 @@ local NetboxEvalError = new_class('NetboxEvalError')
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
 local function netbox_eval(conn, code, args, opts)
-    if type(conn) ~= 'table' then
-        error('Bad argument #1 to errors.netbox_eval' ..
-            ' (net.box connection expected, got ' .. type(conn) .. ')', 2)
-    elseif type(code) ~= 'string' then
+    if type(code) ~= 'string' then
         error('Bad argument #2 to errors.netbox_eval' ..
             ' (string expected, got ' .. type(code) .. ')', 2)
     end
@@ -377,10 +374,7 @@ local NetboxCallError = new_class('NetboxCallError')
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
 local function netbox_call(conn, func_name, args, opts)
-    if type(conn) ~= 'table' then
-        error('Bad argument #1 to errors.netbox_call' ..
-            ' (net.box connection expected, got ' .. type(conn) .. ')', 2)
-    elseif type(func_name) ~= 'string' then
+    if type(func_name) ~= 'string' then
         error('Bad argument #2 to errors.netbox_call' ..
             ' (string expected, got ' .. type(func_name) .. ')', 2)
     end
@@ -414,10 +408,7 @@ end
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
 local function netbox_wait_async(future, timeout)
-    if type(future) ~= 'table' then
-        error('Bad argument #1 to errors.netbox_wait_async' ..
-            ' (net.box future expected, got ' .. type(future) .. ')', 2)
-    elseif type(timeout) ~= 'number' then
+    if type(timeout) ~= 'number' then
         error('Bad argument #2 to errors.netbox_wait_async' ..
             ' (number expected, got ' .. type(timeout) .. ')', 2)
     elseif not (timeout >= 0) then
