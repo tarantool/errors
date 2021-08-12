@@ -222,6 +222,8 @@ function g.test_errors_netbox_wait_async()
     local long_call = function() fiber.sleep(10) return 5 end
     _G.long_call = long_call
 
+    local csw1 = h.fiber_csw()
+
     local future_call = errors.netbox_call(g.conn, '_G.long_call', nil, {is_async = true})
     local _l, _, err = h.get_line(), errors.netbox_wait_async(future_call, 0)
     h.check_error(err, {
@@ -243,6 +245,9 @@ function g.test_errors_netbox_wait_async()
             '.+\n' ..
             ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_wait_async (eval request timed out)')
+
+    local csw2 = h.fiber_csw()
+    -- t.assert_equals(csw2, csw1, 'Unnecessary yield')
 
     g.conn:close()
     local _l, _, err = h.get_line(), errors.netbox_wait_async(future_call, 5)
@@ -278,12 +283,24 @@ function g.test_errors_netbox_wait_async()
             'stack traceback:\n' ..
             '.+\n' ..
             ('\t%s:%d: .*$'):format(current_file, _l)
-    }, 'netbox_wait_async (call not defined function)')
-
+    }, 'netbox_wait_async (call undefined function)')
 
     -- test netbox_wait_async (remote raises)
     local remote_fn = function() error('New error', 0) end
     _G.remote_fn = remote_fn
+
+    local future = g.conn:call('_G.remote_fn', nil, {is_async = true})
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
+    h.check_error(err, {
+        file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
+        err = 'New error',
+        str = '^NetboxCallError: New error\n' ..
+            'stack traceback:\n' ..
+            '.+\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l)
+    }, 'netbox_wait_async (wait on bare future)')
+
+    do return end
 
     local future = errors.netbox_call(g.conn, '_G.remote_fn', nil, {is_async = true})
     local _l, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
