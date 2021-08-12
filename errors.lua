@@ -321,6 +321,7 @@ local function _wrap(prefix_format, suffix_format, ...)
     return unpack(ret, 1, n)
 end
 
+local future_side_data = setmetatable({}, {__mode = 'k'})
 local NetboxEvalError = new_class('NetboxEvalError')
 --- Do protected net.box evaluation.
 -- Execute code on remote server using Tarantool built-in [`net.box` `conn:eval`](
@@ -336,10 +337,7 @@ local NetboxEvalError = new_class('NetboxEvalError')
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
 local function netbox_eval(conn, code, args, opts)
-    if type(conn) ~= 'table' then
-        error('Bad argument #1 to errors.netbox_eval' ..
-            ' (net.box connection expected, got ' .. type(conn) .. ')', 2)
-    elseif type(code) ~= 'string' then
+    if type(code) ~= 'string' then
         error('Bad argument #2 to errors.netbox_eval' ..
             ' (string expected, got ' .. type(code) .. ')', 2)
     end
@@ -350,7 +348,11 @@ local function netbox_eval(conn, code, args, opts)
             return nil, err
         end
 
-        future.conn = conn
+        future_side_data[future] = {
+            method = 'eval',
+            host = conn.host or "",
+            port = conn.port,
+        }
         return future
     end
 
@@ -377,10 +379,7 @@ local NetboxCallError = new_class('NetboxCallError')
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
 local function netbox_call(conn, func_name, args, opts)
-    if type(conn) ~= 'table' then
-        error('Bad argument #1 to errors.netbox_call' ..
-            ' (net.box connection expected, got ' .. type(conn) .. ')', 2)
-    elseif type(func_name) ~= 'string' then
+    if type(func_name) ~= 'string' then
         error('Bad argument #2 to errors.netbox_call' ..
             ' (string expected, got ' .. type(func_name) .. ')', 2)
     end
@@ -391,8 +390,12 @@ local function netbox_call(conn, func_name, args, opts)
             return nil, err
         end
 
-        future.conn = conn
-        future.func_name = func_name
+        future_side_data[future] = {
+            method = 'call',
+            host = conn.host or "",
+            port = conn.port,
+            func_name = func_name,
+        }
         return future
     end
 
@@ -414,10 +417,7 @@ end
 -- @treturn[2] nil
 -- @treturn[2] error_object Error description
 local function netbox_wait_async(future, timeout)
-    if type(future) ~= 'table' then
-        error('Bad argument #1 to errors.netbox_wait_async' ..
-            ' (net.box future expected, got ' .. type(future) .. ')', 2)
-    elseif type(timeout) ~= 'number' then
+    if type(timeout) ~= 'number' then
         error('Bad argument #2 to errors.netbox_wait_async' ..
             ' (number expected, got ' .. type(timeout) .. ')', 2)
     elseif not (timeout >= 0) then
@@ -426,31 +426,24 @@ local function netbox_wait_async(future, timeout)
     end
 
     local err_class, prefix_format, suffix_format
-    if future.method == 'eval' then
-        err_class = NetboxEvalError
 
-        local conn = future.conn
-        if conn ~= nil then
-            prefix_format = {'"%s:%s"', conn.host or "", conn.port}
-            suffix_format = {'during async net.box eval on %s:%s',
-                conn.host or "", conn.port
-            }
-        else
-            suffix_format = {'during async net.box eval'}
-        end
+    local side_data = future_side_data[future]
+    if side_data == nil then
+        err_class = NetboxCallError
+        suffix_format = {'during async net.box request'}
+    elseif side_data.method == 'eval' then
+        err_class = NetboxEvalError
+        prefix_format = {'"%s:%s"', side_data.host, side_data.port}
+        suffix_format = {'during async net.box eval on %s:%s',
+            side_data.host, side_data.port
+        }
     else
         err_class = NetboxCallError
-
-        local conn = future.conn
-        if conn ~= nil then
-            prefix_format = {'"%s:%s"', conn.host or "", conn.port}
-            suffix_format = {'during async net.box call to %s:%s, function %q',
-                conn.host or "", conn.port,
-                future.func_name or "???"
-            }
-        else
-            suffix_format = {'during async net.box call'}
-        end
+        prefix_format = {'"%s:%s"', side_data.host, side_data.port}
+        suffix_format = {'during async net.box call to %s:%s, function %q',
+            side_data.host, side_data.port,
+            side_data.func_name or "???"
+        }
     end
 
     -- wait_result behaviour:

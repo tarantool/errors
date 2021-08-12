@@ -247,7 +247,7 @@ function g.test_errors_netbox_wait_async()
     }, 'netbox_wait_async (eval request timed out)')
 
     local csw2 = h.fiber_csw()
-    t.assert_equals(csw1, csw2, 'Unnecessary yield')
+    t.assert_equals(csw2, csw1, 'Unnecessary yield')
 
     g.conn:close()
     local _l, _, err = h.get_line(), errors.netbox_wait_async(future_call, 5)
