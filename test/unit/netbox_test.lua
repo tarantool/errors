@@ -355,7 +355,23 @@ function g.test_errors_netbox_wait_async()
             'during async net.box eval on 127.0.0.1:3301\n' ..
             'stack traceback:\n' ..
             ('\t%s:%d: .*$'):format(current_file, _l2)
-    }, 'netbox_wait_async (call remote fn returns nil, error_obj)')
+    }, 'netbox_wait_async (eval returns nil, error_obj)')
+
+    local future = g.conn:eval('return _G.remote_fn()', nil, {is_async = true})
+    local _l2, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
+
+    h.check_error(err, {
+        file = current_file,
+        line = _l1,
+        err = 'Error obj',
+        str = '^My error: Error obj\n' ..
+            'stack traceback:\n' ..
+            ('\t%s:%d: '):format(current_file, _l1) ..
+            '.+\n' ..
+            'during async net.box request\n' ..
+            'stack traceback:\n' ..
+            ('\t%s:%d: .*$'):format(current_file, _l2)
+    }, 'netbox_wait_async (wait on bare future returns nil, error_obj)')
 
     -- test netbox_wait_async (correct multireturn)
     local future = errors.netbox_call(g.conn, 'remote_4args_fn', fn_4args, {is_async = true})

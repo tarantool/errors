@@ -371,7 +371,8 @@ local function netbox_eval(conn, code, args, opts)
         local future_proxy = setmetatable({
             future = future,
             method = 'eval',
-            conn = conn,
+            host = conn.host or '',
+            port = conn.port,
         }, future_proxy_mt)
 
         return future_proxy
@@ -413,7 +414,8 @@ local function netbox_call(conn, func_name, args, opts)
         local future_proxy = setmetatable({
             future = future,
             method = 'call',
-            conn = conn,
+            host = conn.host or '',
+            port = conn.port,
             func_name = func_name,
         }, future_proxy_mt)
         return future_proxy
@@ -446,31 +448,22 @@ local function netbox_wait_async(future, timeout)
     end
 
     local err_class, prefix_format, suffix_format
-    if future.method == 'eval' then
+    if future.host == nil then
+        err_class = NetboxCallError
+        suffix_format = {'during async net.box request'}
+    elseif future.method == 'eval' then
         err_class = NetboxEvalError
-
-        local conn = future.conn
-        if conn ~= nil then
-            prefix_format = {'"%s:%s"', conn.host or "", conn.port}
-            suffix_format = {'during async net.box eval on %s:%s',
-                conn.host or "", conn.port
-            }
-        else
-            suffix_format = {'during async net.box eval'}
-        end
+        prefix_format = {'"%s:%s"', future.host, future.port}
+        suffix_format = {'during async net.box eval on %s:%s',
+            future.host, future.port
+        }
     else
         err_class = NetboxCallError
-
-        local conn = future.conn
-        if conn ~= nil then
-            prefix_format = {'"%s:%s"', conn.host or "", conn.port}
-            suffix_format = {'during async net.box call to %s:%s, function %q',
-                conn.host or "", conn.port,
-                future.func_name or "???"
-            }
-        else
-            suffix_format = {'during async net.box call'}
-        end
+        prefix_format = {'"%s:%s"', future.host, future.port}
+        suffix_format = {'during async net.box call to %s:%s, function %q',
+            future.host, future.port,
+            future.func_name or "???"
+        }
     end
 
     -- wait_result behaviour:
