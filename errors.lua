@@ -481,9 +481,20 @@ local function netbox_wait_async(future, timeout)
     --     - error was raised in remote function
     -- - return res (multi return)
     -- wait_result(0) doesn't yield in tarantool < 2.9
-    local ret, err = err_class:pcall(future.wait_result, future, timeout)
+
+    if timeout == 0 and not future:is_ready() then
+        return _wrap(
+            prefix_format, suffix_format,
+            nil, err_class:new("Timeout exceeded")
+        )
+    end
+
+    local ret, err = future:wait_result(timeout)
     if ret == nil then
-        return _wrap(prefix_format, suffix_format, nil, err_class:new(err))
+        return _wrap(
+            prefix_format, suffix_format,
+            nil, err_class:new(tostring(err))
+        )
     else
         return _wrap(
             prefix_format, suffix_format,
