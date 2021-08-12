@@ -321,7 +321,7 @@ local function _wrap(prefix_format, suffix_format, ...)
     return unpack(ret, 1, n)
 end
 
-local future_proxy_mt = {
+local future_proxy_mt = {__index = {
     wait_result = function(self, timeout)
         return self.future:wait_result(timeout)
     end,
@@ -337,7 +337,7 @@ local future_proxy_mt = {
     pairs = function(self)
         return self.future:pairs()
     end,
-}
+}}
 
 local NetboxEvalError = new_class('NetboxEvalError')
 --- Do protected net.box evaluation.
@@ -372,7 +372,7 @@ local function netbox_eval(conn, code, args, opts)
             future = future,
             method = 'eval',
             conn = conn,
-        }, {__index = future_proxy_mt})
+        }, future_proxy_mt)
 
         return future_proxy
     end
@@ -415,7 +415,7 @@ local function netbox_call(conn, func_name, args, opts)
             method = 'call',
             conn = conn,
             func_name = func_name,
-        }, {__index = future_proxy_mt})
+        }, future_proxy_mt)
         return future_proxy
     end
 
