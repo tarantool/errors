@@ -8,48 +8,48 @@ local function fiber_csw()
     return fiber.info()[fiber.id()].csw
 end
 
-local function check_error(got, expected, subtest_name)
+local function check_error(actual, expected, subtest_name)
     local err_msg = ''
     local pattern = table.concat({
         'Unexpected %s',
-        '     got: %s (%s)',
         'expected: %s (%s)',
-        '', ''
+        '  actual: %s (%s)',
+        ''
     }, '\n')
 
-    if expected.file and expected.file ~= got.file then
+    if expected.file and expected.file ~= actual.file then
         err_msg = err_msg .. pattern:format('file',
-            got.file, type(got.file),
-            expected.file, type(expected.file)
+            expected.file, type(expected.file),
+            actual.file, type(actual.file)
         )
     end
 
-    if expected.line and expected.line ~= got.line then
+    if expected.line and expected.line ~= actual.line then
         err_msg = err_msg .. pattern:format('line',
-            got.line, type(got.line),
-            expected.line, type(expected.line)
+            expected.line, type(expected.line),
+            actual.line, type(actual.line)
         )
     end
 
-    if got.err ~= expected.err then
+    if actual.err ~= expected.err then
         err_msg =  err_msg .. pattern:format('err',
-            got.err, type(got.err),
-            expected.err, type(expected.err)
+            expected.err, type(expected.err),
+            actual.err, type(actual.err)
         )
     end
 
-    local err_str = tostring(got)
+    local err_str = tostring(actual)
     if err_str:match(expected.str) == nil then
         err_msg =  err_msg .. pattern:format('tostring()',
-            err_str, type(err_str),
-            expected.str, type(expected.str)
+            expected.str, type(expected.str),
+            err_str, type(err_str)
         )
     end
 
-    if tostring(got) ~= got:tostring() then
+    if tostring(actual) ~= actual:tostring() then
         err_msg =  err_msg .. pattern:format('tostring()',
-            tostring(got), '',
-            got:tostring(), ''
+            actual:tostring(), '',
+            tostring(actual), ''
         )
     end
 

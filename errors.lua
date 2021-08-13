@@ -468,25 +468,18 @@ local function netbox_wait_async(future, timeout)
 
     -- wait_result behaviour:
     -- - may raise an error (if timeout ~= number or timeout < 0)
-    -- - return nil, err (as string in tarantool < 2.9, later as cdata):
+    -- - return nil, err (as string in tarantool < 2.9,
+    --   later as box.error cdata):
     --     - if there is no result with fixed timeout (Timeout exceeded)
     --     - peer closed
     --     - error was raised in remote function
     -- - return res (multi return)
-    -- wait_result(0) doesn't yield in tarantool < 2.9
-
-    if timeout == 0 and not future:is_ready() then
-        return _wrap(
-            prefix_format, suffix_format,
-            nil, err_class:new("Timeout exceeded")
-        )
-    end
-
+    -- wait_result(0) doesn't yield
     local ret, err = future:wait_result(timeout)
     if ret == nil then
         return _wrap(
             prefix_format, suffix_format,
-            nil, err_class:new(tostring(err))
+            nil, err_class:new(err)
         )
     else
         return _wrap(

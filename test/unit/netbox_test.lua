@@ -285,8 +285,15 @@ function g.test_errors_netbox_wait_async()
             ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_wait_async (call undefined function)')
 
+
     local future = g.conn:eval('error("Artificial", 0)', nil, {is_async = true})
-    local _l, _, err = h.get_line(), errors.netbox_wait_async(future, 10)
+    future:wait_result()
+    t.assert_equals(future:is_ready(), true)
+
+    local csw1 = h.fiber_csw()
+
+    local _l, _, err = h.get_line(), errors.netbox_wait_async(future, 0)
+    err.err = tostring(err.err)
     h.check_error(err, {
         file = debug.getinfo(errors.netbox_wait_async).source:gsub('@', ''),
         err = 'Artificial',
@@ -295,6 +302,9 @@ function g.test_errors_netbox_wait_async()
             '.+\n' ..
             ('\t%s:%d: .*$'):format(current_file, _l)
     }, 'netbox_wait_async (wait on bare future)')
+
+    local csw2 = h.fiber_csw()
+    t.assert_equals(csw2, csw1, 'Unnecessary yield')
 
     -- test netbox_wait_async (remote raises)
     local remote_fn = function() error('New error', 0) end
@@ -385,6 +395,14 @@ function g.test_errors_netbox_wait_async()
     t.assert_equals(ret, {'1', nil, false, nil},
         'netbox_wait_async (eval return {"1", box.NULL, false, nil})'
     )
+
+    local csw1 = h.fiber_csw()
+    local ret = {errors.netbox_wait_async(future, 0)}
+    t.assert_equals(ret, {'1', nil, false, nil},
+        'netbox_wait_async (wait again on ready future)'
+    )
+    local csw2 = h.fiber_csw()
+    t.assert_equals(csw2, csw1, 'Unnecessary yield')
 end
 
 function g.test_errors_wrap_remote()
