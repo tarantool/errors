@@ -119,10 +119,6 @@ function error_class:new(...)
     return e
 end
 
-local function pack(...)
-    return select('#', ...), {...}
-end
-
 local function pcall_tail(status, ...)
     if not status then
         return nil, ...
@@ -297,25 +293,34 @@ local function string_format(fmt)
     end
 end
 
-local function _wrap(prefix_format, suffix_format, ...)
-    local n, ret = pack(...)
-    for i = 1, n do
-        local obj = ret[i]
-        if obj == box.NULL then
-            ret[i] = nil
-        elseif is_error_object(obj) then
-            if prefix_format ~= nil then
-                local error_prefix = string_format(prefix_format)
-                obj.err = error_prefix .. ': ' .. obj.err
-                obj.str = obj.class_name .. ': ' .. obj.err
-            end
-
-            if restore_mt(obj) and obj.stack ~= nil then
-                local local_stack = string.strip(debug.traceback("", 2))
-                local stack_suffix = string_format(suffix_format)
-                obj.stack = obj.stack .. '\n' .. stack_suffix .. '\n' .. local_stack
-            end
+local function _wrap_one(lvl, prefix_format, suffix_format, obj)
+    if obj == box.NULL then
+        return nil
+    elseif is_error_object(obj) then
+        if prefix_format ~= nil then
+            local error_prefix = string_format(prefix_format)
+            obj.err = error_prefix .. ': ' .. obj.err
+            obj.str = obj.class_name .. ': ' .. obj.err
         end
+
+        if restore_mt(obj) and obj.stack ~= nil then
+            local local_stack = string.strip(debug.traceback("", lvl))
+            local stack_suffix = string_format(suffix_format)
+            obj.stack = obj.stack .. '\n' .. stack_suffix .. '\n' .. local_stack
+        end
+    end
+    return obj
+end
+
+local function _wrap(prefix_format, suffix_format, ...)
+    local n = select('#', ...)
+    if n == 1 then
+        return _wrap_one(2, prefix_format, suffix_format, ...)
+    end
+
+    local ret = {...}
+    for i = 1, n do
+        ret[i] = _wrap_one(3, prefix_format, suffix_format, ret[i])
     end
 
     return unpack(ret, 1, n)
