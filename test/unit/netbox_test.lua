@@ -35,8 +35,8 @@ g.before_all = function()
         'universe', nil, {if_not_exists = true}
     )
 
-    _G.my_error = my_error
-    _G.remote_4args_fn = remote_4args_fn
+    rawset(_G, 'my_error', my_error)
+    rawset(_G, 'remote_4args_fn', remote_4args_fn)
 end
 
 g.before_each(function()
@@ -109,7 +109,7 @@ function g.test_errors_netbox_eval()
 
 
     local _l1, remote_fn = h.get_line(), function() return nil, my_error:new('Fuschia Platinum') end
-    _G.remote_fn = remote_fn
+    rawset(_G, 'remote_fn', remote_fn)
 
     local _l2, _, err = h.get_line(), errors.netbox_eval(g.conn, 'return remote_fn()')
     h.check_error(err, {
@@ -179,7 +179,7 @@ function g.test_errors_netbox_call()
     }, 'netbox_call(fn_undefined)')
 
     local _l1, remote_fn = h.get_line(), function() return nil, my_error:new('Yellow Iron') end
-    _G.remote_fn = remote_fn
+    rawset(_G, 'remote_fn', remote_fn)
 
     local _l2, _, err = h.get_line(), errors.netbox_call(g.conn, 'remote_fn')
     h.check_error(err, {
@@ -220,7 +220,7 @@ end
 function g.test_errors_netbox_wait_async()
     -- future returns error
     local long_call = function() fiber.sleep(10) return 5 end
-    _G.long_call = long_call
+    rawset(_G, 'long_call', long_call)
 
     local csw1 = h.fiber_csw()
 
@@ -421,7 +421,7 @@ function g.test_errors_wrap_remote()
     }, 'wrap conn:eval("return nil, e:new()")')
 
     local _l1, remote_fn = h.get_line(), function() return nil, my_error:new('Fuschia Platinum') end
-    _G.remote_fn = remote_fn
+    rawset(_G, 'remote_fn', remote_fn)
 
     local _l2, _, err = h.get_line(), errors.wrap(g.conn:eval('return remote_fn()'))
     h.check_error(err, {
@@ -438,7 +438,7 @@ function g.test_errors_wrap_remote()
     }, 'wrap conn:eval("return remote_fn()")')
 
     local _l1, remote_fn = h.get_line(), function() return nil, my_error:new('Yellow Iron') end
-    _G.remote_fn = remote_fn
+    rawset(_G, 'remote_fn', remote_fn)
 
     local _l2, _, err = h.get_line(), errors.wrap(g.conn:call('remote_fn'))
     h.check_error(err, {
