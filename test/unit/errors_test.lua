@@ -9,7 +9,7 @@ local my_error = errors.new_class('My error')
 local current_file = debug.getinfo(1, 'S').short_src
 
 g.before_all = function()
-    _G.my_error = my_error
+    rawset(_G, 'my_error', my_error)
 end
 
 function g.test_error_new()
