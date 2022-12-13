@@ -14,24 +14,21 @@ jobs:
           - '2.6'
           - '2.7'
           - '2.8'
-        nightly: [false]
-        include:
-        - {tarantool: '2.9', nightly: true}
-    runs-on: ubuntu-latest
+          - '2.10'
+    runs-on: ubuntu-20.04
     env:
       CMAKE_LDOC_FIND_REQUIRED: 'YES'
     steps:
-      - uses: actions/checkout@v2
-      - uses: rosik/setup-tarantool@v1
+      - uses: actions/checkout@v3
+      - uses: tarantool/setup-tarantool@v2
         with:
           tarantool-version: ${{ matrix.tarantool }}
-          nightly-build: ${{ matrix.nightly }}
 
       # Setup luacheck, ldoc and luatest
       - run: tarantoolctl rocks install luacheck
       - run: tarantoolctl rocks install ldoc
           --server=https://tarantool.github.io/LDoc/
-      - run: tarantoolctl rocks install luatest 0.5.4
+      - run: tarantoolctl rocks install luatest 0.5.7
       - run: echo ".rocks/bin" >> $GITHUB_PATH
 
       - run: tarantoolctl rocks make
