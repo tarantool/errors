@@ -561,6 +561,8 @@ local function errors_assert(class_name, ...)
 end
 
 return {
+    _VERSION = require('errors.version'),
+
     list = list,
     new_class = new_class,
     netbox_call = netbox_call,
