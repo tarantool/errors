@@ -15,22 +15,24 @@ jobs:
           - '2.7'
           - '2.8'
           - '2.10'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       CMAKE_LDOC_FIND_REQUIRED: 'YES'
     steps:
-      - uses: actions/checkout@v3
-      - uses: tarantool/setup-tarantool@v2
+      - uses: actions/checkout@v4
+      - uses: tarantool/setup-tarantool@v3
         with:
           tarantool-version: ${{ matrix.tarantool }}
 
       # Setup luacheck, ldoc and luatest
       - run: tarantoolctl rocks install luacheck
+      - run: tarantoolctl rocks install luacov
       - run: tarantoolctl rocks install ldoc
           --server=https://tarantool.github.io/LDoc/
       - run: tarantoolctl rocks install luatest 0.5.7
       - run: echo ".rocks/bin" >> $GITHUB_PATH
 
       - run: tarantoolctl rocks make
-      - run: .rocks/bin/luatest -v
+      - run: .rocks/bin/luatest -v --coverage
+      - run: .rocks/bin/luacov . && grep -A999 '^Summary' luacov.report.out
       - run: luacheck .
