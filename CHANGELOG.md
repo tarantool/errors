@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- `CMake` minimum version bumped to 3.5.
+
 ### Added
 
 - Add versioning support.
