@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- Changed cmake_minimum_required to 3.5 
+- `CMake` minimum version bumped to 3.5.
 
 ### Added
 
